@@ -18,3 +18,11 @@
   returning `{:error, {:image_not_found, src}}`:
 
       Press.render("<img src='logo.png'>", default_image: File.read!("unknown.jpg"))
+
+- Support interlaced (Adam7) PNG decoding. Initial scope only decodes
+  non-interlaced PNGs; interlaced ones return
+  `{:error, {:unsupported_image, details}}`.
+
+- Support `text-align: justify` (inter-word spacing distribution).
+  Initial scope only supports `left`/`right`/`center`; `justify` falls
+  back to `left`.

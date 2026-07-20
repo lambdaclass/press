@@ -79,16 +79,25 @@ rule a browser applies for a linked stylesheet followed by inline
 
 ```elixir
 %Press.Error{
-  stage: :html_parse | :css_parse | :layout | :image | ...,
+  stage: :image,
   reason: term(),
   message: String.t()
 }
 ```
 
-Callers can pattern-match on `stage` or just read `message`. Expected
-error cases: unrecoverable HTML/CSS syntax, an `<img src>` that is neither
-a data URI nor a key in `images:` (`{:image_not_found, src}`). An unknown
-`font-family` is *not* an error — it falls back to Helvetica.
+HTML and CSS parsing never fail: both parsers are best-effort (like a
+browser), so any input — however malformed — produces *some* DOM / rule
+list rather than an error. Unsupported/unrecognized properties and
+unknown tags are silently accepted or ignored (see "HTML/CSS subset"
+below), never rejected. The expected data-driven errors in v1 are both
+under `stage: :image`: an `<img src>` that is neither a data URI nor a
+key in `images:` (`reason: {:image_not_found, src}`), and image bytes
+`press` cannot decode — e.g. an interlaced PNG, or bytes that aren't
+valid JPEG/PNG at all (`reason: {:unsupported_image, details}`; see
+"Images" below for exactly what's decodable). An unknown `font-family`
+is *not* an error — it falls back to Helvetica. `stage` is a closed set
+today (`:image`); it may grow if a future feature introduces a new class
+of expected error.
 
 No exceptions are raised for expected/data-driven error cases — only
 `{:error, _}`. Exceptions are reserved for genuine internal bugs (states
@@ -110,7 +119,9 @@ HTML string ─▶ Press.HTML.Parser ─▶ DOM
 CSS string(s) ─▶ Press.CSS.Parser ─▶ rule list (selector + specificity + declarations)
 
 DOM + rules ─▶ Press.Style.Cascade ─▶ styled tree
-               (resolves cascade/specificity, inherits font-size,
+               (starts from the built-in default stylesheet, applies
+                opts[:css] then embedded <style> rules by
+                cascade/specificity, inherits inheritable properties,
                 resolves em/rem/% to points using each node's context)
 
 styled tree ─▶ Press.Layout ─▶ box tree
@@ -170,17 +181,59 @@ xref table.
 
 **HTML tags:** `html`, `head`, `style`, `body`, `div`, `span`, `p`,
 `h1`–`h6`, `strong`/`b`, `em`/`i`, `br`, `ul`/`ol`/`li`, `table`/`thead`/
-`tbody`/`tfoot`/`tr`/`th`/`td`, `img`, `header`, `footer`, `main`.
-Unknown tags are treated as a generic `div` rather than an error, so the
-parser is resilient to markup it doesn't yet know about.
+`tbody`/`tfoot`/`tr`/`th`/`td` (with `colspan`/`rowspan` attributes),
+`img`, `header`, `footer`, `main`.
+Unknown tags are treated as a generic anonymous box rather than an
+error, so the parser is resilient to markup it doesn't yet know about.
+An unknown tag defaults to block-level, since that's the safer default
+for the print-document use case this library targets; it does not
+attempt to guess whether the tag "should" be inline.
+
+**Default (user-agent) stylesheet:** before applying `opts[:css]` and any
+embedded `<style>`, a built-in stylesheet applies browser-like defaults.
+This is the complete v1 list — nothing beyond it is implied:
+
+```css
+strong, b { font-weight: bold; }
+em, i { font-style: italic; }
+th { font-weight: bold; text-align: center; }
+h1 { font-size: 24pt; margin: 0.67em 0; }
+h2 { font-size: 18pt; margin: 0.75em 0; }
+h3 { font-size: 14pt; margin: 0.83em 0; }
+h4 { font-size: 12pt; margin: 1.12em 0; }
+h5 { font-size: 10pt; margin: 1.5em 0; }
+h6 { font-size: 8pt; margin: 1.67em 0; }
+p { margin: 1em 0; }
+ul, ol { list-style-position: outside; margin: 1em 0; }
+ul { list-style-type: disc; }
+ol { list-style-type: decimal; }
+```
+
+This is the lowest-priority stylesheet in the cascade — `opts[:css]` and
+embedded `<style>` both override it, same as a user stylesheet overrides
+a browser's defaults. Tags with no default rule (`div`, `span`, `table`,
+unknown tags, ...) get no implicit styling.
 
 **CSS properties:**
 - Box: `width`, `height`, `margin(-*)`, `padding(-*)`, `border(-*)`
   (style `solid` only, color, width), `box-sizing`.
 - Text: `font-family` (limited to the 14 base fonts; unknown families fall
   back to Helvetica), `font-size`, `font-weight` (`normal`/`bold`),
-  `font-style` (`normal`/`italic`), `color`, `text-align`, `line-height`.
-- Table: `border-collapse`, `border-spacing`.
+  `font-style` (`normal`/`italic`), `color`, `text-align`
+  (`left`/`right`/`center`; `justify` is out of scope for v1 — see
+  `TODO.md` — and falls back to `left`), `line-height`.
+- Colors (`color`, `background-color`, `border-color`): `#rgb`/`#rrggbb`
+  hex, `rgb(r, g, b)`, and the standard CSS named colors (`red`, `black`,
+  `white`, `blue`, ...).
+- Lists: `list-style-type` (`disc`/`decimal`/`none`), `list-style-position`
+  (`outside`/`inside`).
+- Table: `border-collapse`, `border-spacing`. Column widths follow a
+  simple auto-layout: a column's width is the widest content among its
+  cells unless a `width` is set on a cell in that column, in which case
+  that fixed width is used instead. A cell with `colspan > 1` splits its
+  required width evenly across the columns it spans, and each of those
+  columns contributes that share to its own width the same way a
+  non-spanning cell would.
 - `background-color`.
 - `@page` with `size` (`A4`/`Letter`/`Legal` or custom `<width> <height>`)
   and `margin`.
@@ -188,7 +241,20 @@ parser is resilient to markup it doesn't yet know about.
   override on top of automatic pagination.
 
 Unsupported properties are silently ignored, matching browser behavior
-for unrecognized CSS.
+for unrecognized CSS. The same applies to a recognized property with an
+unsupported value (e.g. `border-style: dashed`, `font-weight: 600`): it
+is ignored as if the declaration weren't there, falling back to whatever
+value the property would otherwise have (inherited or initial) — never
+an error.
+
+**Inheritance:** `color`, `font-family`, `font-size`, `font-weight`,
+`font-style`, `text-align`, `line-height`, `list-style-type`, and
+`list-style-position` are inherited from parent to child, same as in
+CSS. `margin`, `padding`, `border(-*)`, `width`, `height`, and
+`background-color` are not inherited. Initial values (used at the root
+when nothing else applies): `color: black`, `font-family: Helvetica`,
+`font-size: 12pt`, `font-weight: normal`, `font-style: normal`,
+`text-align: left`, `line-height: normal` (treated as `1.2`).
 
 **Selectors:** type, class, id, and the descendant combinator only (see
 Non-goals for deferred combinators/pseudo-classes).
@@ -197,7 +263,12 @@ Non-goals for deferred combinators/pseudo-classes).
 browser convention); relative — `em`, `rem`, `%`. All are resolved to
 points during the cascade stage, using each node's computed font-size
 (for `em`) or the root font-size (for `rem`) or the containing block's
-size (for `%`).
+size (for `%`). As in standard CSS, a `%` on any of the four `margin-*`/
+`padding-*` properties — including `-top`/`-bottom` — resolves against
+the containing block's *width*, not its height. `line-height` accepts a
+unitless number (e.g. `line-height: 1.5`, interpreted as a multiplier of
+the node's own `font-size`) or an absolute unit; `%` is not a supported
+form for `line-height`.
 
 ## Fonts and text measurement
 
@@ -233,7 +304,13 @@ where the next word doesn't fit) — no hyphenation.
 height. When the next non-splittable box (a table row, a paragraph)
 doesn't fit in the remaining space on the current page, it closes the
 page (repeating `header`/`footer`) and continues on a new one. Tables
-repeat their `<thead>` row at the top of each page they continue onto.
+repeat their `<thead>` row at the top of each page they continue onto. A
+row spanned by an in-progress `rowspan` is treated as non-splittable
+together with every row it spans — the whole spanned range moves to the
+next page as one unit rather than being cut mid-span. If a single
+non-splittable box is still taller than a full empty page's usable
+height, it is placed anyway and allowed to overflow the page bottom,
+rather than looping forever trying to find a page it fits on.
 
 `page-break-before`/`page-break-after: always` forces a manual break
 regardless of remaining space.
@@ -251,12 +328,24 @@ regardless of remaining space.
 render returns `{:error, %Press.Error{stage: :image, reason: {:image_not_found, src}}}`.
 This keeps `press` free of filesystem/network I/O.
 
+If the `width`/`height` HTML attributes and the `width`/`height` CSS
+properties are all absent for an `<img>`, its rendered size falls back to
+the image's own intrinsic pixel dimensions (read from the JPEG/PNG
+header), converted to points using the same 96px = 1in convention as the
+`px` unit.
+
 - **JPEG**: bytes are copied as-is into the PDF (`DCTDecode`), no
   decoding needed.
-- **PNG**: the header (IHDR: width/height/color depth/type) is decoded
-  and the pixel stream is recompressed with `:zlib` (built into OTP) into
-  the form PDF expects (`FlateDecode` + `DeviceRGB`/`DeviceGray`, with a
-  separate `SMask` for alpha channels).
+- **PNG**: non-interlaced only, any of the standard color types
+  (truecolor, truecolor+alpha, grayscale, grayscale+alpha, and
+  palette/indexed with its `PLTE`/`tRNS` chunks). The header (IHDR) and
+  pixel stream are decoded and recompressed with `:zlib` (built into
+  OTP) into the form PDF expects (`FlateDecode` + `DeviceRGB`/
+  `DeviceGray`/indexed color space, with a separate `SMask` for alpha
+  channels). Interlaced (Adam7) PNGs, and any bytes that don't parse as
+  valid JPEG/PNG at all, are out of scope for v1 (see `TODO.md`) and
+  produce `{:error, %Press.Error{stage: :image, reason: {:unsupported_image, details}}}`
+  rather than a crash or a silently broken image.
 
 ## Testing strategy
 

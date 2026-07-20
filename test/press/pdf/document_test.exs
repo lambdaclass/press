@@ -25,9 +25,15 @@ defmodule Press.PDF.DocumentTest do
 
   test "draw_text/6 appends a text op to the given page" do
     {doc, index} = Document.new() |> Document.add_page(595.0, 842.0)
-    doc = Document.draw_text(doc, index, 10.0, 20.0, "Hello world!", font: :helvetica_bold, size: 24)
 
-    assert [%Press.PDF.Page{ops: [{:text, 10.0, 20.0, :helvetica_bold, 24, {0, 0, 0}, "Hello world!"}]}] =
+    doc =
+      Document.draw_text(doc, index, 10.0, 20.0, "Hello world!", font: :helvetica_bold, size: 24)
+
+    assert [
+             %Press.PDF.Page{
+               ops: [{:text, 10.0, 20.0, :helvetica_bold, 24, {0, 0, 0}, "Hello world!"}]
+             }
+           ] =
              doc.pages
   end
 

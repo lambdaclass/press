@@ -182,7 +182,10 @@ xref table.
 **HTML tags:** `html`, `head`, `style`, `body`, `div`, `span`, `p`,
 `h1`–`h6`, `strong`/`b`, `em`/`i`, `br`, `ul`/`ol`/`li`, `table`/`thead`/
 `tbody`/`tfoot`/`tr`/`th`/`td` (with `colspan`/`rowspan` attributes),
-`img`, `header`, `footer`, `main`.
+`img`, `header`, `footer`, `main`, `link`, `meta` (`link`/`meta` are
+parsed as void elements — like `br`/`img` — but carry no rendering
+behavior of their own; a `<link rel="stylesheet">` is not fetched, since
+`press` performs no I/O).
 Unknown tags are treated as a generic anonymous box rather than an
 error, so the parser is resilient to markup it doesn't yet know about.
 An unknown tag defaults to block-level, since that's the safer default

@@ -41,3 +41,8 @@
   list via `page.ops ++ [new_op]` (O(n) per call). Fine at current scale;
   revisit (e.g. prepend + reverse at render time) if a later phase emits
   hundreds of ops per page.
+
+- Expand HTML entity decoding beyond the minimal set (`&amp; &lt; &gt;
+  &quot; &apos;` + numeric `&#NNN;`/`&#xHH;`). Initial scope (Phase 2,
+  HTML parser) does not support named entities like `&aacute;`, `&ntilde;`,
+  or `&euro;` — callers can write the character directly in UTF-8 instead.

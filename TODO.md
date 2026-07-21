@@ -51,3 +51,10 @@
   numeric entity like `&#0;` decodes to a literal NUL byte. Not a
   problem today (nothing consumes decoded text yet), but worth
   revisiting once decoded text reaches the PDF content-stream writer.
+
+- `Press.HTML.TreeBuilder` has no auto-closing rule for `thead`/`tbody`/
+  `tfoot`. Unclosed table sections (e.g. `<table><thead><tr><th>H<tbody>
+  <tr><td>d`) currently nest incorrectly instead of becoming sibling
+  sections. Found during Phase 2's final review; not part of the 5
+  approved auto-closing rules. Worth addressing before Phase 5
+  (pagination) needs to reliably find/repeat `<thead>` per page.

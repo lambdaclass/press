@@ -15,9 +15,12 @@ Under active development, phase by phase:
 
 - ✅ **Phase 1 — PDF writer core**: place text with the 14 standard PDF
   fonts and draw filled/stroked rectangles, producing a valid PDF binary.
-  No HTML/CSS yet — see the example below.
-- ⏳ **Phase 2 onward** (HTML parser, CSS cascade, layout, pagination,
-  images, the public `Press.render/2` HTML+CSS API): not implemented yet.
+  See the example below.
+- ✅ **Phase 2 — HTML parser**: a lenient, never-fails HTML-to-DOM parser
+  (`Press.HTML.Parser.parse/1`). Not wired into a PDF pipeline yet — that
+  happens once CSS cascade and layout (next phases) exist.
+- ⏳ **Phase 3 onward** (CSS cascade, layout, pagination, images, the
+  public `Press.render/2` HTML+CSS API): not implemented yet.
 
 ## Installation
 
@@ -64,6 +67,14 @@ File.write!("hello.pdf", pdf_binary)
 
 This writes a one-page A4 PDF with a light-gray bordered box and bold
 "Hello world!" text inside it.
+
+Phase 2 adds a lenient HTML parser (not yet wired into the PDF
+pipeline above — that happens once CSS cascade and layout exist):
+
+```elixir
+iex> Press.HTML.Parser.parse("<h1>Hello world!</h1>")
+[%Press.HTML.Element{tag: "h1", attrs: %{}, children: [%Press.HTML.Text{content: "Hello world!"}]}]
+```
 
 ## License
 

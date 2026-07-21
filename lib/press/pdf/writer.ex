@@ -43,7 +43,8 @@ defmodule Press.PDF.Writer do
     font_objects =
       for font <- fonts do
         {font_obj_numbers[font],
-         "<< /Type /Font /Subtype /Type1 /BaseFont /#{Fonts.base_font_name(font)} >>"}
+         "<< /Type /Font /Subtype /Type1 /BaseFont /#{Fonts.base_font_name(font)} " <>
+           "/Encoding /WinAnsiEncoding >>"}
       end
 
     objects =

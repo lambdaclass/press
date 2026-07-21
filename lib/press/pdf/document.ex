@@ -34,6 +34,10 @@ defmodule Press.PDF.Document do
   end
 
   defp update_page(%__MODULE__{pages: pages} = doc, index, fun) do
+    if index < 0 or index >= length(pages) do
+      raise ArgumentError, "no page at index #{index} (document has #{length(pages)} page(s))"
+    end
+
     %{doc | pages: List.update_at(pages, index, fun)}
   end
 end

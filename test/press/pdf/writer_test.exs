@@ -34,6 +34,16 @@ defmodule Press.PDF.WriterTest do
     assert length(Regex.scan(~r{/BaseFont /Helvetica\b}, binary)) == 1
   end
 
+  test "Font objects declare WinAnsiEncoding so accented characters render correctly" do
+    doc = Document.new()
+    {doc, p} = Document.add_page(doc, 595.0, 842.0)
+    doc = Document.draw_text(doc, p, 0.0, 0.0, "café", font: :helvetica)
+
+    binary = Writer.to_binary(doc)
+
+    assert binary =~ "/Encoding /WinAnsiEncoding"
+  end
+
   test "every xref offset points at the matching \"N 0 obj\"" do
     doc = Document.new()
     {doc, p} = Document.add_page(doc, 595.0, 842.0)

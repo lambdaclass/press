@@ -17,7 +17,7 @@ defmodule Press.PDF.ContentStream do
         "BT",
         "#{resource} #{Syntax.number(size)} Tf",
         "#{Syntax.number(x)} #{Syntax.number(y)} Td",
-        "(#{Syntax.escape_string(text)}) Tj",
+        "(#{text |> to_winansi() |> Syntax.escape_string()}) Tj",
         "ET",
         "Q"
       ],
@@ -57,4 +57,19 @@ defmodule Press.PDF.ContentStream do
   defp paint_operator(_fill, nil), do: "f"
   defp paint_operator(nil, _stroke), do: "S"
   defp paint_operator(_fill, _stroke), do: "B"
+
+  # WinAnsiEncoding is essentially Windows-1252, which matches Latin-1
+  # (ISO-8859-1) for 0x00-0x7F and 0xA0-0xFF. PDF string literals for the
+  # base-14 fonts are single-byte, so UTF-8 text must be converted before
+  # being embedded. The 0x80-0x9F Windows-1252-specific block (curly
+  # quotes, em-dash, euro sign, etc.) is out of scope for Phase 1.
+  defp to_winansi(text) do
+    text
+    |> String.to_charlist()
+    |> Enum.map(&winansi_byte/1)
+    |> :erlang.list_to_binary()
+  end
+
+  defp winansi_byte(codepoint) when codepoint in 0x00..0xFF, do: codepoint
+  defp winansi_byte(_codepoint), do: ?\s
 end

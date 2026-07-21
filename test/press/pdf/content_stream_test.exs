@@ -22,6 +22,21 @@ defmodule Press.PDF.ContentStreamTest do
     assert result =~ "(a \\(b\\) c) Tj"
   end
 
+  test "converts accented UTF-8 characters to single-byte WinAnsi/Latin-1 encoding" do
+    ops = [{:text, 0.0, 0.0, :helvetica, 12, {0, 0, 0}, "café"}]
+    result = ContentStream.render(ops, %{helvetica: "/F1"})
+
+    # "café" in WinAnsi/Latin-1: c=0x63 a=0x61 f=0x66 é=0xE9 (single byte, not the UTF-8 two-byte 0xC3 0xA9)
+    assert result =~ <<"(caf", 0xE9, ") Tj">>
+  end
+
+  test "replaces characters outside the WinAnsi/Latin-1 range with a space" do
+    ops = [{:text, 0.0, 0.0, :helvetica, 12, {0, 0, 0}, "a€b"}]
+    result = ContentStream.render(ops, %{helvetica: "/F1"})
+
+    assert result =~ "(a b) Tj"
+  end
+
   test "renders a filled and stroked rect op" do
     ops = [{:rect, 1.0, 2.0, 3.0, 4.0, {0.9, 0.9, 0.9}, {0, 0, 0}, 1.5}]
     result = ContentStream.render(ops, %{})

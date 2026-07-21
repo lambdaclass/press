@@ -64,4 +64,12 @@ defmodule Press.PDF.DocumentTest do
 
     assert [%Press.PDF.Page{ops: [{:rect, 0.0, 0.0, 1.0, 1.0, nil, nil, 1.0}]}] = doc.pages
   end
+
+  test "draw_text/6 raises on an out-of-range page index" do
+    {doc, _index} = Document.new() |> Document.add_page(595.0, 842.0)
+
+    assert_raise ArgumentError, fn ->
+      Document.draw_text(doc, 5, 0.0, 0.0, "x")
+    end
+  end
 end

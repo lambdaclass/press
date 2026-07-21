@@ -6,6 +6,7 @@ defmodule Press.PDF.Writer do
   def to_binary(%Document{pages: pages}) do
     page_count = length(pages)
     fonts = collect_fonts(pages)
+    # One past the last contents object number, i.e. contents_obj_num(page_count - 1) + 1.
     first_font_obj_num = 3 + page_count * 2
 
     font_resource_names =
@@ -16,14 +17,14 @@ defmodule Press.PDF.Writer do
     resources = resources_dict(fonts, font_resource_names, font_obj_numbers)
 
     page_obj_numbers =
-      if page_count == 0, do: [], else: for(i <- 0..(page_count - 1), do: 3 + i * 2)
+      if page_count == 0, do: [], else: for(i <- 0..(page_count - 1), do: page_obj_num(i))
 
     page_and_content_objects =
       pages
       |> Enum.with_index()
       |> Enum.flat_map(fn {page, i} ->
-        page_obj_num = 3 + i * 2
-        contents_obj_num = 4 + i * 2
+        page_obj_num = page_obj_num(i)
+        contents_obj_num = contents_obj_num(i)
         content_bytes = ContentStream.render(page.ops, font_resource_names)
 
         page_body =
@@ -78,14 +79,15 @@ defmodule Press.PDF.Writer do
   end
 
   defp assemble(header, objects) do
-    {body_iodata, offsets} =
-      Enum.reduce(objects, {[], %{}}, fn {num, body}, {acc, offsets} ->
-        offset = byte_size(header) + IO.iodata_length(acc)
+    initial = {[], %{}, byte_size(header)}
+
+    {body_iodata, offsets, xref_offset} =
+      Enum.reduce(objects, initial, fn {num, body}, {acc, offsets, running_offset} ->
         obj_iodata = "#{num} 0 obj\n#{body}\nendobj\n"
-        {[acc, obj_iodata], Map.put(offsets, num, offset)}
+        new_offset = running_offset + IO.iodata_length(obj_iodata)
+        {[acc, obj_iodata], Map.put(offsets, num, running_offset), new_offset}
       end)
 
-    xref_offset = byte_size(header) + IO.iodata_length(body_iodata)
     max_obj_num = objects |> Enum.map(&elem(&1, 0)) |> Enum.max()
 
     xref_entries =
@@ -105,4 +107,7 @@ defmodule Press.PDF.Writer do
   end
 
   defp pad_offset(offset), do: offset |> Integer.to_string() |> String.pad_leading(10, "0")
+
+  defp page_obj_num(i), do: 3 + i * 2
+  defp contents_obj_num(i), do: 4 + i * 2
 end

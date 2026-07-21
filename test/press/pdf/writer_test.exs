@@ -64,4 +64,10 @@ defmodule Press.PDF.WriterTest do
     assert binary =~ "/Root 1 0 R"
     assert String.ends_with?(binary, "%%EOF")
   end
+
+  test "handles a zero-page document without crashing, producing an empty /Kids array" do
+    binary = Writer.to_binary(Document.new())
+
+    assert binary =~ "/Kids [] /Count 0"
+  end
 end

@@ -54,10 +54,12 @@ defmodule Press.HTML.TreeBuilder do
 
   defp autoclose(state, _new_tag), do: state
 
+  # Repeated `tag`: matches only when both arguments are the same tag name.
   defp same_tag_sibling?(tag, tag) when tag in @sibling_closing_tags, do: true
   defp same_tag_sibling?(t1, t2) when t1 in @cell_tags and t2 in @cell_tags, do: true
   defp same_tag_sibling?(_t1, _t2), do: false
 
+  # Repeated `tag`: matches only when the top-of-stack frame's tag equals the target.
   defp close_until({[%{tag: tag} | _], _top_level} = state, tag), do: close_top(state)
   defp close_until(state, tag), do: state |> close_top() |> close_until(tag)
 

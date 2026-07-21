@@ -37,7 +37,7 @@ already established for `Press.PDF.ContentStream`/`Writer` in Phase 1.
 The two node types the parser produces and every later phase (Cascade,
 Layout) consumes.
 
-- [ ] **Step 1: Write the implementation (no separate test — pure data, exercised by every later task's tests)**
+- [x] **Step 1: Write the implementation (no separate test — pure data, exercised by every later task's tests)**
 
 ```elixir
 # lib/press/html/element.ex
@@ -78,12 +78,12 @@ defmodule Press.HTML.Text do
 end
 ```
 
-- [ ] **Step 2: Compile and confirm no errors**
+- [x] **Step 2: Compile and confirm no errors**
 
 Run: `mix compile --warnings-as-errors`
 Expected: compiles cleanly, no warnings.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add lib/press/html/element.ex lib/press/html/text.ex
@@ -103,7 +103,7 @@ values. Scope per the design doc: the 5 XML entities + numeric entities
 (decimal and hex); anything else (unrecognized name, missing `;`,
 invalid digits) is left as literal text, unchanged.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.HTML.EntitiesTest do
@@ -151,12 +151,12 @@ defmodule Press.HTML.EntitiesTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/html/entities_test.exs`
 Expected: FAIL — `Press.HTML.Entities` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.HTML.Entities do
@@ -193,12 +193,12 @@ defmodule Press.HTML.Entities do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/html/entities_test.exs`
 Expected: PASS (8 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/html/entities.ex test/press/html/entities_test.exs
@@ -231,7 +231,7 @@ Depends on `Press.HTML.Entities` (Task 2).
   checking whether the token list already starts with a `{:text, _}`
   token and appending to it instead of always prepending a new one.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.HTML.TokenizerTest do
@@ -333,12 +333,12 @@ defmodule Press.HTML.TokenizerTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/html/tokenizer_test.exs`
 Expected: FAIL — `Press.HTML.Tokenizer` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.HTML.Tokenizer do
@@ -520,12 +520,12 @@ defmodule Press.HTML.Tokenizer do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/html/tokenizer_test.exs`
 Expected: PASS (17 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/html/tokenizer.ex test/press/html/tokenizer_test.exs
@@ -544,7 +544,7 @@ Consumes a token list (independent of the real Tokenizer — tests use
 hand-built token lists) and builds the DOM via a stack of open elements,
 applying the 5 auto-closing rules from the design doc.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.HTML.TreeBuilderTest do
@@ -707,12 +707,12 @@ defmodule Press.HTML.TreeBuilderTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/html/tree_builder_test.exs`
 Expected: FAIL — `Press.HTML.TreeBuilder` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.HTML.TreeBuilder do
@@ -794,12 +794,12 @@ defmodule Press.HTML.TreeBuilder do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/html/tree_builder_test.exs`
 Expected: PASS (11 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/html/tree_builder.ex test/press/html/tree_builder_test.exs
@@ -819,7 +819,7 @@ module later phases (and external callers, eventually via `Press.render/2`)
 will use — it gets real documentation and a doctest, per this project's
 documentation standard.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.HTML.ParserTest do
@@ -843,12 +843,12 @@ defmodule Press.HTML.ParserTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/html/parser_test.exs`
 Expected: FAIL — `Press.HTML.Parser` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.HTML.Parser do
@@ -888,12 +888,12 @@ defmodule Press.HTML.Parser do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/html/parser_test.exs`
 Expected: PASS (2 tests, 1 doctest, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/html/parser.ex test/press/html/parser_test.exs
@@ -913,7 +913,7 @@ full `Press.HTML.Parser.parse/1` — confirms Tokenizer and TreeBuilder
 work correctly together, not just in isolation. This is the acceptance
 test for Phase 2.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```elixir
 defmodule Press.HTML.IntegrationTest do
@@ -965,7 +965,7 @@ defmodule Press.HTML.IntegrationTest do
 end
 ```
 
-- [ ] **Step 2: Run the test**
+- [x] **Step 2: Run the test**
 
 Run: `mix test test/press/html/integration_test.exs`
 Expected: Given Tasks 1-5 are already implemented, this should PASS
@@ -973,13 +973,13 @@ immediately — it exercises only the already-built public API. If it
 fails, that means an earlier task has a bug; fix the relevant module
 (not this test) before continuing.
 
-- [ ] **Step 3: Run the full suite**
+- [x] **Step 3: Run the full suite**
 
 Run: `mix test`
 Expected: All tests passing — Phase 1's ~32 tests plus Phase 2's new
 ones, 0 failures.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add test/press/html/integration_test.exs
@@ -990,9 +990,9 @@ git commit -m "Add end-to-end integration test for HTML parser"
 
 ## Definition of Done
 
-- [ ] All tasks above complete, all tests passing (`mix test`).
-- [ ] `mix format --check-formatted` clean.
-- [ ] `docs/superpowers/plans/2026-07-22-html-parser.md` (this file) has every checkbox ticked.
+- [x] All tasks above complete, all tests passing (`mix test`).
+- [x] `mix format --check-formatted` clean.
+- [x] `docs/superpowers/plans/2026-07-22-html-parser.md` (this file) has every checkbox ticked.
 - [ ] Next phase (Phase 3 — CSS parser + cascade, per
       `docs/superpowers/specs/2026-07-20-html-css-to-pdf-design.md`) gets
       its own spec/plan when it's time to start it.

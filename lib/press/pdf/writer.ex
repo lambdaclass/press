@@ -6,8 +6,8 @@ defmodule Press.PDF.Writer do
   def to_binary(%Document{pages: pages}) do
     page_count = length(pages)
     fonts = collect_fonts(pages)
-    # One past the last contents object number, i.e. contents_obj_num(page_count - 1) + 1.
-    first_font_obj_num = 3 + page_count * 2
+    # One past the last contents object number.
+    first_font_obj_num = page_obj_num(page_count)
 
     font_resource_names =
       fonts |> Enum.with_index(1) |> Map.new(fn {font, i} -> {font, "/F#{i}"} end)

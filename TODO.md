@@ -26,3 +26,18 @@
 - Support `text-align: justify` (inter-word spacing distribution).
   Initial scope only supports `left`/`right`/`center`; `justify` falls
   back to `left`.
+
+- Validate the `font:` atom passed to `Press.PDF.Document.draw_text/6`
+  against `Press.PDF.Fonts.standard_fonts/0` at the call site. Currently
+  an invalid atom only surfaces as a `KeyError` deep inside
+  `Press.PDF.Writer.to_binary/1`, far from the actual mistake.
+
+- Add `@doc`/`@spec` to the `Press.PDF.Document`/`Press.PDF.Writer` public
+  API (`new/0`, `add_page/3`, `draw_text/6`, `draw_rect/6`,
+  `to_binary/1`) before later phases (layout, pagination) build heavily
+  on top of it.
+
+- `Press.PDF.Document.draw_text/6`/`draw_rect/6` append to a page's `ops`
+  list via `page.ops ++ [new_op]` (O(n) per call). Fine at current scale;
+  revisit (e.g. prepend + reverse at render time) if a later phase emits
+  hundreds of ops per page.

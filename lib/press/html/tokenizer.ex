@@ -160,6 +160,7 @@ defmodule Press.HTML.Tokenizer do
   defp take_attr_value(<<?', rest::binary>>), do: take_quoted(rest, ?', "")
   defp take_attr_value(rest), do: take_unquoted(rest, "")
 
+  # The repeated `c` requires the extracted byte to equal quote_char — this is how we detect the matching closing quote.
   defp take_quoted(<<c, rest::binary>>, c, acc), do: {Entities.decode(acc), rest}
 
   defp take_quoted(<<c, rest::binary>>, quote_char, acc) do

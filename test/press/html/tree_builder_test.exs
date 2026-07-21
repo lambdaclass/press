@@ -113,6 +113,29 @@ defmodule Press.HTML.TreeBuilderTest do
            ]
   end
 
+  test "rule 3: closes an open p even when it's not the immediate top of the stack" do
+    tokens = [
+      {:start_tag, "p", %{}},
+      {:text, "text"},
+      {:start_tag, "strong", %{}},
+      {:text, "bold"},
+      {:start_tag, "div", %{}},
+      {:text, "more"}
+    ]
+
+    assert TreeBuilder.build(tokens) == [
+             %Element{
+               tag: "p",
+               attrs: %{},
+               children: [
+                 %Text{content: "text"},
+                 %Element{tag: "strong", attrs: %{}, children: [%Text{content: "bold"}]}
+               ]
+             },
+             %Element{tag: "div", attrs: %{}, children: [%Text{content: "more"}]}
+           ]
+  end
+
   test "rule 4: a mismatched end tag closes back to the matching ancestor" do
     tokens = [
       {:start_tag, "div", %{}},

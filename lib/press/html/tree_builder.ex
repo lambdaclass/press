@@ -44,8 +44,8 @@ defmodule Press.HTML.TreeBuilder do
       top_tag in @cell_tags and new_tag == "tr" ->
         state |> close_top() |> autoclose(new_tag)
 
-      top_tag == "p" and new_tag in @p_closing_tags ->
-        state |> close_top() |> autoclose(new_tag)
+      new_tag in @p_closing_tags and open_p?(state) ->
+        state |> close_until("p") |> autoclose(new_tag)
 
       true ->
         state
@@ -53,6 +53,8 @@ defmodule Press.HTML.TreeBuilder do
   end
 
   defp autoclose(state, _new_tag), do: state
+
+  defp open_p?({stack, _top_level}), do: Enum.any?(stack, &(&1.tag == "p"))
 
   # Repeated `tag`: matches only when both arguments are the same tag name.
   defp same_tag_sibling?(tag, tag) when tag in @sibling_closing_tags, do: true

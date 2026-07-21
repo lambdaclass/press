@@ -20,7 +20,7 @@ This is Phase 1 of the `press` HTML+CSS-to-PDF project. It deliberately does not
 
 PDF numbers and literal strings have specific formatting/escaping rules. This task builds the two shared helpers every later task uses.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.PDF.SyntaxTest do
@@ -56,12 +56,12 @@ defmodule Press.PDF.SyntaxTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/pdf/syntax_test.exs`
 Expected: FAIL — `Press.PDF.Syntax` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.PDF.Syntax do
@@ -89,12 +89,12 @@ defmodule Press.PDF.Syntax do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/pdf/syntax_test.exs`
 Expected: PASS (5 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/pdf/syntax.ex test/press/pdf/syntax_test.exs
@@ -111,7 +111,7 @@ git commit -m "Add PDF number/string syntax helpers"
 
 The 14 standard PDF fonts don't need to be embedded, but the writer needs to map our internal font atoms (`:helvetica_bold`) to the exact `BaseFont` names PDF readers expect (`"Helvetica-Bold"`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.PDF.FontsTest do
@@ -143,12 +143,12 @@ defmodule Press.PDF.FontsTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/pdf/fonts_test.exs`
 Expected: FAIL — `Press.PDF.Fonts` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.PDF.Fonts do
@@ -177,12 +177,12 @@ defmodule Press.PDF.Fonts do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/pdf/fonts_test.exs`
 Expected: PASS (2 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/pdf/fonts.ex test/press/pdf/fonts_test.exs
@@ -200,7 +200,7 @@ git commit -m "Add base-14 PDF font name table"
 
 This is the in-memory API later phases (and this plan's own integration test) use to describe pages: add a page, draw text on it, draw a rectangle on it. It only builds data — no PDF bytes yet.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.PDF.DocumentTest do
@@ -266,12 +266,12 @@ defmodule Press.PDF.DocumentTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/pdf/document_test.exs`
 Expected: FAIL — `Press.PDF.Document` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 # lib/press/pdf/page.ex
@@ -325,12 +325,12 @@ defmodule Press.PDF.Document do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/pdf/document_test.exs`
 Expected: PASS (7 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/pdf/page.ex lib/press/pdf/document.ex test/press/pdf/document_test.exs
@@ -347,7 +347,7 @@ git commit -m "Add PDF document/page builder API"
 
 Turns a page's list of `{:text, ...}` / `{:rect, ...}` ops into PDF content-stream operator bytes (the `BT ... ET`, `re`, `f`/`S`/`B` operators a PDF page's content stream is made of).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.PDF.ContentStreamTest do
@@ -403,12 +403,12 @@ defmodule Press.PDF.ContentStreamTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/pdf/content_stream_test.exs`
 Expected: FAIL — `Press.PDF.ContentStream` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.PDF.ContentStream do
@@ -473,12 +473,12 @@ defmodule Press.PDF.ContentStream do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/pdf/content_stream_test.exs`
 Expected: PASS (5 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/pdf/content_stream.ex test/press/pdf/content_stream_test.exs
@@ -495,7 +495,7 @@ git commit -m "Add PDF content stream rendering for text and rect ops"
 
 Assigns PDF indirect object numbers (`1` = Catalog, `2` = Pages, then two objects per page — Page and its Contents stream — then one Font object per distinct font used across the document), serializes every object while tracking byte offsets, and writes the header/xref/trailer.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.PDF.WriterTest do
@@ -564,12 +564,12 @@ defmodule Press.PDF.WriterTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/pdf/writer_test.exs`
 Expected: FAIL — `Press.PDF.Writer` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.PDF.Writer do
@@ -680,12 +680,12 @@ defmodule Press.PDF.Writer do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/pdf/writer_test.exs`
 Expected: PASS (5 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/pdf/writer.ex test/press/pdf/writer_test.exs
@@ -701,7 +701,7 @@ git commit -m "Add PDF object assembly, xref/trailer, and Writer.to_binary/1"
 
 Builds a one-page document with a bordered/filled box and bold "Hello world!" text using only the public `Press.PDF.Document`/`Press.PDF.Writer` API, and checks the produced binary is a structurally valid, openable PDF. This is the acceptance test for Phase 1: if it passes, the PDF writer core is done.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```elixir
 defmodule Press.PDF.IntegrationTest do
@@ -737,12 +737,12 @@ defmodule Press.PDF.IntegrationTest do
 end
 ```
 
-- [ ] **Step 2: Run the test to verify it fails or passes**
+- [x] **Step 2: Run the test to verify it fails or passes**
 
 Run: `mix test test/press/pdf/integration_test.exs`
 Expected: Given Tasks 1-5 are already implemented, this should PASS immediately — it exercises only the already-built public API. If it fails, that means Tasks 1-5 have a bug; fix the relevant module (not this test) before continuing.
 
-- [ ] **Step 3: Manually confirm the PDF actually opens**
+- [x] **Step 3: Manually confirm the PDF actually opens**
 
 Run:
 ```bash
@@ -762,7 +762,7 @@ open /tmp/press_hello.pdf
 
 Expected: your system PDF viewer opens `/tmp/press_hello.pdf` and shows a light-gray bordered box with bold "Hello world!" text inside it, on an A4-sized page. This is the real acceptance check for Phase 1 — the automated tests check structure, this confirms it's an actual usable PDF.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add test/press/pdf/integration_test.exs
@@ -773,7 +773,7 @@ git commit -m "Add end-to-end integration test for PDF writer core"
 
 ## Definition of Done
 
-- [ ] All tasks above complete, all tests passing (`mix test`).
-- [ ] The manual check in Task 6 Step 3 confirms a real PDF viewer opens the generated file correctly.
-- [ ] `docs/superpowers/plans/2026-07-21-pdf-writer-core.md` (this file) has every checkbox ticked.
+- [x] All tasks above complete, all tests passing (`mix test`).
+- [x] The manual check in Task 6 Step 3 confirms a real PDF viewer opens the generated file correctly.
+- [x] `docs/superpowers/plans/2026-07-21-pdf-writer-core.md` (this file) has every checkbox ticked.
 - [ ] Next phase (Phase 2 — HTML parser, per `docs/superpowers/specs/2026-07-20-html-css-to-pdf-design.md`) gets its own plan document when it's time to start it.

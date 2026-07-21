@@ -117,22 +117,27 @@ children of an implicit document root — they don't need an actual
 
 ## Auto-closing rules
 
-Four concrete rules, scoped to the tags Phase 2 supports — not an attempt
+Five concrete rules, scoped to the tags Phase 2 supports — not an attempt
 to replicate full HTML5's much larger implicit-closing table:
 
 1. **Same-tag sibling closing:** opening `p`, `li`, `tr`, `td`, or `th`
    while one of the same tag is already open (as the nearest "closable"
    ancestor) closes the previous one first. Handles `<li>one<li>two` and
-   unclosed table rows/cells.
-2. **Block tag inside `p`:** opening any block-level tag (`div`, `h1`–`h6`,
+   unclosed table cells (`<td>a<td>b`).
+2. **`tr` closes a dangling cell:** opening `tr` while a `td` or `th` is
+   still open closes that cell first (in addition to closing a previous
+   `tr`, already covered by rule 1) — so `<tr><td>a<td>b<tr><td>c` closes
+   both the second `<td>` and the first `<tr>` when the second `<tr>`
+   opens, rather than nesting the new row inside the dangling cell.
+3. **Block tag inside `p`:** opening any block-level tag (`div`, `h1`–`h6`,
    `ul`, `ol`, `table`, `header`, `footer`, `main`, or another `p`) while
    a `p` is open closes that `p` first — a `<p>` can't contain a block.
-3. **Mismatched end-tag recovery:** an end tag that doesn't match the top
+4. **Mismatched end-tag recovery:** an end tag that doesn't match the top
    of the open-element stack searches up the stack for a matching open
    element. If found, everything down to and including it is closed
    (implicitly closing any unclosed descendants along the way). If not
    found anywhere in the stack, the stray end tag is ignored.
-4. **End of input:** anything still open when the input ends is closed
+5. **End of input:** anything still open when the input ends is closed
    implicitly, innermost first.
 
 ## Attributes and `<style>` raw text

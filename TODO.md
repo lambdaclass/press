@@ -46,3 +46,8 @@
   &quot; &apos;` + numeric `&#NNN;`/`&#xHH;`). Initial scope (Phase 2,
   HTML parser) does not support named entities like `&aacute;`, `&ntilde;`,
   or `&euro;` — callers can write the character directly in UTF-8 instead.
+
+- `Press.HTML.Entities.decode/1` doesn't filter control characters — a
+  numeric entity like `&#0;` decodes to a literal NUL byte. Not a
+  problem today (nothing consumes decoded text yet), but worth
+  revisiting once decoded text reaches the PDF content-stream writer.

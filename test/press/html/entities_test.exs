@@ -40,4 +40,9 @@ defmodule Press.HTML.EntitiesTest do
   test "leaves text with no entities untouched" do
     assert Entities.decode("Hello world!") == "Hello world!"
   end
+
+  test "leaves an out-of-range or surrogate numeric entity as literal text instead of crashing" do
+    assert Entities.decode("&#xD800;") == "&#xD800;"
+    assert Entities.decode("&#x110000;") == "&#x110000;"
+  end
 end

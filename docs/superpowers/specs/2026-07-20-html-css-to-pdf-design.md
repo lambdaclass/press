@@ -122,11 +122,14 @@ DOM + rules ─▶ Press.Style.Cascade ─▶ styled tree
                (starts from the built-in default stylesheet, applies
                 opts[:css] then embedded <style> rules by
                 cascade/specificity, inherits inheritable properties,
-                resolves em/rem/% to points using each node's context)
+                resolves em/rem/absolute units to points using each
+                node's context; % stays symbolic, see "Units" below)
 
 styled tree ─▶ Press.Layout ─▶ box tree
                (sizes and positions assuming a single infinite-height page;
-                block layout algorithm + tables live here)
+                block layout algorithm + tables live here; resolves any
+                remaining {:percent, _} values against the actual
+                containing block width computed during layout)
 
 box tree + @page ─▶ Press.Layout.Paginate ─▶ page list
                      (slices the box tree into pages, repeats header/footer,
@@ -154,7 +157,10 @@ constraint on input HTML.
 # CSS rule (CSS parser output)
 %Press.CSS.Rule{selector: [...], specificity: {0, 1, 0}, declarations: %{"font-size" => "14px"}}
 
-# Styled node (cascade output) — units already resolved to points
+# Styled node (cascade output) — em/rem/absolute units resolved to points;
+# % stays symbolic (e.g. {:percent, 50.0}) since resolving it needs the
+# containing block's width, which is a layout-time concept the cascade
+# doesn't have (see docs/superpowers/specs/2026-07-24-css-parser-cascade-design.md)
 %Press.Style.Node{
   element: %Press.HTML.Element{},
   computed: %{font_size: 10.5, color: {0, 0, 0}, margin: %{top: 0, right: 0, bottom: 0, left: 0}, ...},
@@ -263,10 +269,15 @@ when nothing else applies): `color: black`, `font-family: Helvetica`,
 Non-goals for deferred combinators/pseudo-classes).
 
 **Units:** absolute — `mm`, `cm`, `in`, `pt`, `px` (96px = 1in, matching
-browser convention); relative — `em`, `rem`, `%`. All are resolved to
-points during the cascade stage, using each node's computed font-size
-(for `em`) or the root font-size (for `rem`) or the containing block's
-size (for `%`). As in standard CSS, a `%` on any of the four `margin-*`/
+browser convention); relative — `em`, `rem`, `%`. Absolute units, `em`
+(using each node's own resolved font-size), and `rem` (using the root's
+resolved font-size) are resolved to points **during the cascade stage**,
+since they only depend on font-size, a purely stylistic value. `%`
+depends on the containing block's width, which isn't known until
+Layout runs — the cascade leaves `%` values symbolic (e.g.
+`{:percent, 50.0}`) for Layout to resolve; see
+`docs/superpowers/specs/2026-07-24-css-parser-cascade-design.md` for the
+full rationale. As in standard CSS, a `%` on any of the four `margin-*`/
 `padding-*` properties — including `-top`/`-bottom` — resolves against
 the containing block's *width*, not its height. `line-height` accepts a
 unitless number (e.g. `line-height: 1.5`, interpreted as a multiplier of

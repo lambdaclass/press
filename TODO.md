@@ -61,3 +61,13 @@
 
 - Expand `Press.CSS.Value`'s named-color table from ~55 common CSS
   color names to the full 147-name CSS Color Module Level 3 list.
+
+- `Press.CSS.Value.parse_keyword/2` calls `String.to_atom/1` on
+  arbitrary (trimmed/downcased) input before checking it against the
+  valid keyword list, so a malformed keyword still creates a new,
+  never-garbage-collected BEAM atom. Low risk today since CSS input
+  comes from the trusted caller generating the document, not
+  untrusted end users, but would become a real atom-exhaustion DoS
+  vector if `press` is ever used to render unsanitized third-party
+  CSS. Consider `String.to_existing_atom/1` with a rescue, or matching
+  against string keywords instead of interning.

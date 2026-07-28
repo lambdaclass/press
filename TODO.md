@@ -12,6 +12,13 @@
 
 - Support combinators beyond descendant (`>` child, `+`/`~` siblings) and
   attribute selectors (`[attr=value]`) in the CSS selector matcher.
+  Currently, a compound-selector fragment `Press.CSS.Selector.parse/1`
+  can't parse (e.g. one of these unsupported combinators) becomes an
+  empty `%{}` compound that matches any element, silently *weakening*
+  the selector instead of the whole rule being dropped the way a real
+  browser would treat an unparseable selector. Worth reconsidering
+  once these combinators are added — e.g. drop the whole rule when any
+  compound in it fails to parse.
 
 - Support a `default_image:` render option (fallback image bytes used when
   an `<img src>` is neither a data URI nor a key in `images:`), instead of

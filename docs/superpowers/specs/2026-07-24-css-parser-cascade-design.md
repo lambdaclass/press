@@ -34,7 +34,7 @@ having to redo this boundary later.
 # Press.CSS.Rule (style_rules) — declaration values are already parsed into
 # typed-but-context-free terms (see "Value parsing" below), not raw strings
 %Press.CSS.Rule{
-  selector: [%{type: "table"}, %{type: "td", class: "total"}],
+  selector: [%{type: "table"}, %{type: "td", classes: ["total"]}],
   specificity: {0, 1, 2},   # {ids, classes, types}
   declarations: %{"color" => {1.0, 0.0, 0.0}, "font-size" => {:length, 12, :px}},
   source_index: 3           # position among rules of the same parse call, for tie-breaking
@@ -68,12 +68,17 @@ below). `source_index` is local to one `parse/1` call.
 
 **Selector representation:** a list of compound-selector maps, one per
 step in the descendant chain, left-to-right (outermost to innermost).
-`table td.total` becomes `[%{type: "table"}, %{type: "td", class: "total"}]`.
-Each map holds any subset of `type:`/`class:`/`id:` keys — `.total`
-alone is `%{class: "total"}` with no `type:` key. A comma-separated
-selector group (`h1, h2, h3 { ... }`) expands into one `%Rule{}` per
-group member, all sharing the same `declarations` and `source_index` —
-the rest of the pipeline never needs to know they were grouped.
+`table td.total` becomes `[%{type: "table"}, %{type: "td", classes: ["total"]}]`.
+Each map holds any subset of `type:`/`classes:`/`id:` keys — `.total`
+alone is `%{classes: ["total"]}` with no `type:` key. `classes:` is a
+list (not a single string) so a chained multi-class selector like
+`.btn.btn-primary` — common in real-world CSS — keeps every class as an
+independent, all-must-match requirement (`%{classes: ["btn", "btn-primary"]}`)
+instead of the later class silently overwriting the earlier one. A
+comma-separated selector group (`h1, h2, h3 { ... }`) expands into one
+`%Rule{}` per group member, all sharing the same `declarations` and
+`source_index` — the rest of the pipeline never needs to know they were
+grouped.
 
 **Styled tree (`Press.Style.Cascade` output):**
 
@@ -222,10 +227,11 @@ solved the same way (an accumulator threaded through the recursive
 walk).
 
 **Class matching is token-based, not exact-string:** a compound step's
-`class:` constraint matches if that class name appears anywhere in the
-element's `class` attribute when split on whitespace — `class="foo total
-bar"` matches `.total`, same as every browser. `id:` and `type:` are
-exact-string matches (an element has at most one `id` and one tag name).
+`classes:` constraint matches if *every* class name in the list appears
+somewhere in the element's `class` attribute when split on whitespace —
+`class="foo total bar"` matches `.total` and also `.foo.total`, same as
+every browser. `id:` and `type:` are exact-string matches (an element
+has at most one `id` and one tag name).
 
 ## Cascade entry point
 

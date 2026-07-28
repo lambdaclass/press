@@ -27,7 +27,7 @@ defmodule Press.CSS.Selector do
     ~r/([.#])([A-Za-z0-9_-]+)/
     |> Regex.scan(rest)
     |> Enum.reduce(map, fn
-      [_, ".", name], acc -> Map.put(acc, :class, name)
+      [_, ".", name], acc -> Map.update(acc, :classes, [name], &(&1 ++ [name]))
       [_, "#", name], acc -> Map.put(acc, :id, name)
     end)
   end
@@ -36,7 +36,7 @@ defmodule Press.CSS.Selector do
     Enum.reduce(compounds, {0, 0, 0}, fn compound, {ids, classes, types} ->
       {
         ids + bool_to_int(Map.has_key?(compound, :id)),
-        classes + bool_to_int(Map.has_key?(compound, :class)),
+        classes + length(Map.get(compound, :classes, [])),
         types + bool_to_int(Map.has_key?(compound, :type))
       }
     end)
@@ -74,11 +74,13 @@ defmodule Press.CSS.Selector do
   defp id_matches?(%{id: id}, element), do: Map.get(element.attrs, "id") == id
   defp id_matches?(_compound, _element), do: true
 
-  defp class_matches?(%{class: class}, element) do
-    element.attrs
-    |> Map.get("class", "")
-    |> String.split()
-    |> Enum.member?(class)
+  defp class_matches?(%{classes: classes}, element) do
+    element_classes =
+      element.attrs
+      |> Map.get("class", "")
+      |> String.split()
+
+    Enum.all?(classes, &(&1 in element_classes))
   end
 
   defp class_matches?(_compound, _element), do: true

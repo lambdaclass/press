@@ -990,8 +990,7 @@ defmodule Press.CSS.Parser do
     "margin" => &Value.parse_length/1,
     "padding" => &Value.parse_length/1,
     "border-width" => &Value.parse_length/1,
-    "border-color" => &Value.parse_color/1,
-    "border-style" => fn v -> Value.parse_keyword(v, [:solid]) end
+    "border-color" => &Value.parse_color/1
   }
 
   @color_properties ~w(color background-color)
@@ -1110,6 +1109,15 @@ defmodule Press.CSS.Parser do
   end
 
   defp parse_declaration("border", value), do: Shorthand.expand_border(value)
+
+  defp parse_declaration("border-style", value) do
+    # Not in @box_shorthand_properties: a closure (as opposed to a
+    # remote function capture like &Value.parse_length/1) can't be
+    # stored in a module attribute — Elixir can't escape it into the
+    # BEAM constant pool at compile time. Handled as its own clause
+    # instead.
+    Shorthand.expand_box("border-style", value, fn v -> Value.parse_keyword(v, [:solid]) end)
+  end
 
   defp parse_declaration("font-family", value) do
     name = value |> String.trim() |> String.trim("\"") |> String.trim("'") |> String.downcase()
@@ -1806,6 +1814,7 @@ defmodule Press.Style.IntegrationTest do
   use ExUnit.Case, async: true
 
   alias Press.CSS.Parser, as: CSSParser
+  alias Press.HTML.Element
   alias Press.HTML.Parser, as: HTMLParser
   alias Press.Style.{Cascade, Node}
 
@@ -1823,22 +1832,28 @@ defmodule Press.Style.IntegrationTest do
 
     embedded_css =
       dom
-      |> find_all("style")
+      |> find_dom("style")
       |> Enum.map_join("\n", fn %{children: [%Press.HTML.Text{content: content}]} -> content end)
 
     {_emb_page_rules, embedded_rules} = CSSParser.parse(embedded_css)
 
     styled = Cascade.build(dom, external_rules, embedded_rules)
 
-    [h1] = find_all(styled, "h1")
+    [h1] = find_styled(styled, "h1")
     assert h1.computed.font_size == 24.0
 
-    [p] = find_all(styled, "p")
+    [p] = find_styled(styled, "p")
     assert_in_delta p.computed.font_size, 10.5, 0.01
     assert p.computed.color == {1.0, 0.0, 0.0}
   end
 
-  defp find_all(nodes, tag) do
+  # Pre-cascade: filters Press.HTML.Element nodes from Press.HTML.Parser's output.
+  defp find_dom(nodes, tag) do
+    Enum.filter(nodes, &match?(%Element{tag: ^tag}, &1))
+  end
+
+  # Post-cascade: filters Press.Style.Node nodes from Press.Style.Cascade.build/3's output.
+  defp find_styled(nodes, tag) do
     Enum.filter(nodes, &match?(%Node{element: %{tag: ^tag}}, &1))
   end
 end

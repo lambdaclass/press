@@ -45,13 +45,22 @@ defmodule Press.CSS.ParserTest do
            }
   end
 
-  test "expands a border shorthand" do
+  test "expands a border shorthand to all four sides" do
     {[], [rule]} = Parser.parse("div { border: 1px solid #000000; }")
 
     assert rule.declarations == %{
-             "border-width" => {:length, 1.0, :px},
-             "border-style" => :solid,
-             "border-color" => {0.0, 0.0, 0.0}
+             "border-width-top" => {:length, 1.0, :px},
+             "border-width-right" => {:length, 1.0, :px},
+             "border-width-bottom" => {:length, 1.0, :px},
+             "border-width-left" => {:length, 1.0, :px},
+             "border-style-top" => :solid,
+             "border-style-right" => :solid,
+             "border-style-bottom" => :solid,
+             "border-style-left" => :solid,
+             "border-color-top" => {0.0, 0.0, 0.0},
+             "border-color-right" => {0.0, 0.0, 0.0},
+             "border-color-bottom" => {0.0, 0.0, 0.0},
+             "border-color-left" => {0.0, 0.0, 0.0}
            }
   end
 

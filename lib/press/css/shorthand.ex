@@ -33,10 +33,27 @@ defmodule Press.CSS.Shorthand do
     end
   end
 
+  @sides ~w(top right bottom left)
+
   def expand_border(raw_value) do
-    raw_value
-    |> String.split()
-    |> Enum.reduce({:ok, %{}}, &expand_border_part/2)
+    case raw_value |> String.split() |> Enum.reduce({:ok, %{}}, &expand_border_part/2) do
+      {:ok, parts} -> {:ok, fan_out_to_sides(parts)}
+      :error -> :error
+    end
+  end
+
+  # The `border` shorthand always applies the same width/style/color to
+  # all four sides (unlike `margin`/`padding`, there's no 1/2/3/4-value
+  # per-side form of the compound `border` shorthand in CSS). Still fan
+  # each resolved property out to "<property>-top/right/bottom/left" so
+  # Press.Style.Cascade's per-property merge (which only ever looks for
+  # longhand keys, same as every other box property) sees it correctly
+  # instead of a flat "border-width"/"border-style"/"border-color" key
+  # nothing else in the pipeline reads.
+  defp fan_out_to_sides(parts) do
+    Enum.reduce(parts, %{}, fn {property, value}, acc ->
+      Enum.reduce(@sides, acc, fn side, acc2 -> Map.put(acc2, "#{property}-#{side}", value) end)
+    end)
   end
 
   defp expand_border_part(_part, :error), do: :error

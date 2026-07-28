@@ -83,27 +83,41 @@ defmodule Press.CSS.ShorthandTest do
   end
 
   describe "expand_border/1" do
-    test "expands width, style, and color regardless of order" do
-      assert Shorthand.expand_border("1px solid #000000") ==
-               {:ok,
-                %{
-                  "border-width" => {:length, 1.0, :px},
-                  "border-style" => :solid,
-                  "border-color" => {0.0, 0.0, 0.0}
-                }}
+    test "expands width, style, and color to all four sides, regardless of order" do
+      expected =
+        {:ok,
+         %{
+           "border-width-top" => {:length, 1.0, :px},
+           "border-width-right" => {:length, 1.0, :px},
+           "border-width-bottom" => {:length, 1.0, :px},
+           "border-width-left" => {:length, 1.0, :px},
+           "border-style-top" => :solid,
+           "border-style-right" => :solid,
+           "border-style-bottom" => :solid,
+           "border-style-left" => :solid,
+           "border-color-top" => {0.0, 0.0, 0.0},
+           "border-color-right" => {0.0, 0.0, 0.0},
+           "border-color-bottom" => {0.0, 0.0, 0.0},
+           "border-color-left" => {0.0, 0.0, 0.0}
+         }}
 
-      assert Shorthand.expand_border("solid #000000 1px") ==
-               {:ok,
-                %{
-                  "border-width" => {:length, 1.0, :px},
-                  "border-style" => :solid,
-                  "border-color" => {0.0, 0.0, 0.0}
-                }}
+      assert Shorthand.expand_border("1px solid #000000") == expected
+      assert Shorthand.expand_border("solid #000000 1px") == expected
     end
 
     test "accepts a subset of the three parts" do
       assert Shorthand.expand_border("1px solid") ==
-               {:ok, %{"border-width" => {:length, 1.0, :px}, "border-style" => :solid}}
+               {:ok,
+                %{
+                  "border-width-top" => {:length, 1.0, :px},
+                  "border-width-right" => {:length, 1.0, :px},
+                  "border-width-bottom" => {:length, 1.0, :px},
+                  "border-width-left" => {:length, 1.0, :px},
+                  "border-style-top" => :solid,
+                  "border-style-right" => :solid,
+                  "border-style-bottom" => :solid,
+                  "border-style-left" => :solid
+                }}
     end
 
     test "rejects a part that isn't a valid width, style, or color" do

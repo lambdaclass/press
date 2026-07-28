@@ -368,7 +368,7 @@ end
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/css/value_test.exs`
-Expected: PASS (16 tests, 0 failures)
+Expected: PASS (14 tests, 0 failures)
 
 - [ ] **Step 5: Add the deferred full-color-list TODO and commit**
 

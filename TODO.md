@@ -58,3 +58,6 @@
   sections. Found during Phase 2's final review; not part of the 5
   approved auto-closing rules. Worth addressing before Phase 5
   (pagination) needs to reliably find/repeat `<thead>` per page.
+
+- Expand `Press.CSS.Value`'s named-color table from ~55 common CSS
+  color names to the full 147-name CSS Color Module Level 3 list.

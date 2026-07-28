@@ -487,27 +487,41 @@ defmodule Press.CSS.ShorthandTest do
   end
 
   describe "expand_border/1" do
-    test "expands width, style, and color regardless of order" do
-      assert Shorthand.expand_border("1px solid #000000") ==
-               {:ok,
-                %{
-                  "border-width" => {:length, 1.0, :px},
-                  "border-style" => :solid,
-                  "border-color" => {0.0, 0.0, 0.0}
-                }}
+    test "expands width, style, and color to all four sides, regardless of order" do
+      expected =
+        {:ok,
+         %{
+           "border-width-top" => {:length, 1.0, :px},
+           "border-width-right" => {:length, 1.0, :px},
+           "border-width-bottom" => {:length, 1.0, :px},
+           "border-width-left" => {:length, 1.0, :px},
+           "border-style-top" => :solid,
+           "border-style-right" => :solid,
+           "border-style-bottom" => :solid,
+           "border-style-left" => :solid,
+           "border-color-top" => {0.0, 0.0, 0.0},
+           "border-color-right" => {0.0, 0.0, 0.0},
+           "border-color-bottom" => {0.0, 0.0, 0.0},
+           "border-color-left" => {0.0, 0.0, 0.0}
+         }}
 
-      assert Shorthand.expand_border("solid #000000 1px") ==
-               {:ok,
-                %{
-                  "border-width" => {:length, 1.0, :px},
-                  "border-style" => :solid,
-                  "border-color" => {0.0, 0.0, 0.0}
-                }}
+      assert Shorthand.expand_border("1px solid #000000") == expected
+      assert Shorthand.expand_border("solid #000000 1px") == expected
     end
 
     test "accepts a subset of the three parts" do
       assert Shorthand.expand_border("1px solid") ==
-               {:ok, %{"border-width" => {:length, 1.0, :px}, "border-style" => :solid}}
+               {:ok,
+                %{
+                  "border-width-top" => {:length, 1.0, :px},
+                  "border-width-right" => {:length, 1.0, :px},
+                  "border-width-bottom" => {:length, 1.0, :px},
+                  "border-width-left" => {:length, 1.0, :px},
+                  "border-style-top" => :solid,
+                  "border-style-right" => :solid,
+                  "border-style-bottom" => :solid,
+                  "border-style-left" => :solid
+                }}
     end
 
     test "rejects a part that isn't a valid width, style, or color" do
@@ -560,10 +574,27 @@ defmodule Press.CSS.Shorthand do
     end
   end
 
+  @sides ~w(top right bottom left)
+
   def expand_border(raw_value) do
-    raw_value
-    |> String.split()
-    |> Enum.reduce({:ok, %{}}, &expand_border_part/2)
+    case raw_value |> String.split() |> Enum.reduce({:ok, %{}}, &expand_border_part/2) do
+      {:ok, parts} -> {:ok, fan_out_to_sides(parts)}
+      :error -> :error
+    end
+  end
+
+  # The `border` shorthand always applies the same width/style/color to
+  # all four sides (unlike `margin`/`padding`, there's no 1/2/3/4-value
+  # per-side form of the compound `border` shorthand in CSS). Still fan
+  # each resolved property out to "<property>-top/right/bottom/left" so
+  # Press.Style.Cascade's per-property merge (which only ever looks for
+  # longhand keys, same as every other box property) sees it correctly
+  # instead of a flat "border-width"/"border-style"/"border-color" key
+  # nothing else in the pipeline reads.
+  defp fan_out_to_sides(parts) do
+    Enum.reduce(parts, %{}, fn {property, value}, acc ->
+      Enum.reduce(@sides, acc, fn side, acc2 -> Map.put(acc2, "#{property}-#{side}", value) end)
+    end)
   end
 
   defp expand_border_part(_part, :error), do: :error
@@ -913,13 +944,22 @@ defmodule Press.CSS.ParserTest do
            }
   end
 
-  test "expands a border shorthand" do
+  test "expands a border shorthand to all four sides" do
     {[], [rule]} = Parser.parse("div { border: 1px solid #000000; }")
 
     assert rule.declarations == %{
-             "border-width" => {:length, 1.0, :px},
-             "border-style" => :solid,
-             "border-color" => {0.0, 0.0, 0.0}
+             "border-width-top" => {:length, 1.0, :px},
+             "border-width-right" => {:length, 1.0, :px},
+             "border-width-bottom" => {:length, 1.0, :px},
+             "border-width-left" => {:length, 1.0, :px},
+             "border-style-top" => :solid,
+             "border-style-right" => :solid,
+             "border-style-bottom" => :solid,
+             "border-style-left" => :solid,
+             "border-color-top" => {0.0, 0.0, 0.0},
+             "border-color-right" => {0.0, 0.0, 0.0},
+             "border-color-bottom" => {0.0, 0.0, 0.0},
+             "border-color-left" => {0.0, 0.0, 0.0}
            }
   end
 

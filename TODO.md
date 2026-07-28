@@ -78,3 +78,14 @@
   vector if `press` is ever used to render unsanitized third-party
   CSS. Consider `String.to_existing_atom/1` with a rescue, or matching
   against string keywords instead of interning.
+
+- `Press.CSS.Parser`'s brace-matched block splitter only correctly
+  drops an unterminated rule (`{` with no matching `}`) when the
+  truncation is at the very end of the input. If valid CSS follows an
+  unterminated rule, the splitter instead pairs that rule's `{` with a
+  `}` belonging to the next rule, silently destroying that next rule
+  rather than cleanly dropping just the malformed one. Found during
+  Phase 3's Task 5 review; low risk in practice since `press`'s CSS
+  input is generator-produced rather than hand-typed, but worth a
+  proper fix (detect a second `{` between the candidate `{`/`}` pair
+  and resync there instead) if it ever surfaces.

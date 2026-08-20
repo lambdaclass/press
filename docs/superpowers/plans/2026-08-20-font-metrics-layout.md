@@ -22,11 +22,11 @@
 - Create: `lib/press/font/metrics.ex`
 - Test: `test/press/font/metrics_test.exs`
 
-- [ ] **Step 1: Write the failing tests**
-- [ ] **Step 2: Run the tests to verify they fail**
-- [ ] **Step 3: Write the implementation**
-- [ ] **Step 4: Run the tests to verify they pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write the failing tests**
+- [x] **Step 2: Run the tests to verify they fail**
+- [x] **Step 3: Write the implementation**
+- [x] **Step 4: Run the tests to verify they pass**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -36,11 +36,11 @@
 - Create: `lib/press/layout/box.ex`
 - Test: `test/press/layout/box_test.exs`
 
-- [ ] **Step 1: Write the failing tests**
-- [ ] **Step 2: Run the tests to verify they fail**
-- [ ] **Step 3: Write the implementation**
-- [ ] **Step 4: Run the tests to verify they pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write the failing tests**
+- [x] **Step 2: Run the tests to verify they fail**
+- [x] **Step 3: Write the implementation**
+- [x] **Step 4: Run the tests to verify they pass**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -50,11 +50,11 @@
 - Create: `lib/press/layout/inline.ex`
 - Test: `test/press/layout/inline_test.exs`
 
-- [ ] **Step 1: Write the failing tests**
-- [ ] **Step 2: Run the tests to verify they fail**
-- [ ] **Step 3: Write the implementation**
-- [ ] **Step 4: Run the tests to verify they pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write the failing tests**
+- [x] **Step 2: Run the tests to verify they fail**
+- [x] **Step 3: Write the implementation**
+- [x] **Step 4: Run the tests to verify they pass**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -64,11 +64,11 @@
 - Create: `lib/press/layout/block.ex`
 - Test: `test/press/layout/block_test.exs`
 
-- [ ] **Step 1: Write the failing tests**
-- [ ] **Step 2: Run the tests to verify they fail**
-- [ ] **Step 3: Write the implementation**
-- [ ] **Step 4: Run the tests to verify they pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write the failing tests**
+- [x] **Step 2: Run the tests to verify they fail**
+- [x] **Step 3: Write the implementation**
+- [x] **Step 4: Run the tests to verify they pass**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -78,11 +78,11 @@
 - Create: `lib/press/layout/table.ex`
 - Test: `test/press/layout/table_test.exs`
 
-- [ ] **Step 1: Write the failing tests**
-- [ ] **Step 2: Run the tests to verify they fail**
-- [ ] **Step 3: Write the implementation**
-- [ ] **Step 4: Run the tests to verify they pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write the failing tests**
+- [x] **Step 2: Run the tests to verify they fail**
+- [x] **Step 3: Write the implementation**
+- [x] **Step 4: Run the tests to verify they pass**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -92,11 +92,11 @@
 - Create: `lib/press/layout.ex`
 - Test: `test/press/layout_test.exs`
 
-- [ ] **Step 1: Write the failing tests**
-- [ ] **Step 2: Run the tests to verify they fail**
-- [ ] **Step 3: Write the implementation**
-- [ ] **Step 4: Run the tests to verify they pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write the failing tests**
+- [x] **Step 2: Run the tests to verify they fail**
+- [x] **Step 3: Write the implementation**
+- [x] **Step 4: Run the tests to verify they pass**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -105,7 +105,7 @@
 **Files:**
 - Test: `test/press/layout/integration_test.exs`
 
-- [ ] **Step 1: Write the failing test**
-- [ ] **Step 2: Run the test**
-- [ ] **Step 3: Run the full test suite**
-- [ ] **Step 4: Commit**
+- [x] **Step 1: Write the failing test**
+- [x] **Step 2: Run the test**
+- [x] **Step 3: Run the full test suite**
+- [x] **Step 4: Commit**

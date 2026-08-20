@@ -64,29 +64,62 @@ defmodule Press.CSS.Parser do
 
   defp strip_comments(css), do: Regex.replace(~r/\/\*.*?\*\//s, css, "")
 
-  defp split_blocks(css), do: css |> do_split_blocks([]) |> Enum.reverse()
+  defp split_blocks(css) do
+    tokenize_blocks(css, [], "")
+  end
 
-  defp do_split_blocks(css, acc) do
-    case :binary.match(css, "{") do
-      :nomatch ->
-        acc
+  defp tokenize_blocks(<<>>, acc, _header), do: Enum.reverse(acc)
 
-      {open_pos, _len} ->
-        case :binary.match(css, "}") do
-          :nomatch ->
-            acc
+  defp tokenize_blocks(<<";", rest::binary>>, acc, _header) do
+    tokenize_blocks(rest, acc, "")
+  end
 
-          {close_pos, _len} when close_pos > open_pos ->
-            header = css |> binary_part(0, open_pos) |> String.trim()
-            body = css |> binary_part(open_pos + 1, close_pos - open_pos - 1) |> String.trim()
-            rest = binary_part(css, close_pos + 1, byte_size(css) - close_pos - 1)
-            do_split_blocks(rest, [{header, body} | acc])
+  defp tokenize_blocks(<<"{", rest::binary>>, acc, header) do
+    case extract_balanced_body(rest, 1, <<>>) do
+      {:ok, body, remaining} ->
+        trimmed_header = String.trim(header)
 
-          {close_pos, _len} ->
-            rest = binary_part(css, close_pos + 1, byte_size(css) - close_pos - 1)
-            do_split_blocks(rest, acc)
+        cond do
+          String.starts_with?(trimmed_header, "@layer") or
+            String.starts_with?(trimmed_header, "@media") or
+              String.starts_with?(trimmed_header, "@supports") ->
+            nested = split_blocks(body)
+            tokenize_blocks(remaining, nested ++ acc, "")
+
+          String.starts_with?(trimmed_header, "@keyframes") or
+            String.starts_with?(trimmed_header, "@property") or
+              String.starts_with?(trimmed_header, "@font-face") ->
+            tokenize_blocks(remaining, acc, "")
+
+          true ->
+            tokenize_blocks(remaining, [{trimmed_header, body} | acc], "")
         end
+
+      :error ->
+        Enum.reverse(acc)
     end
+  end
+
+  defp tokenize_blocks(<<char, rest::binary>>, acc, header) do
+    tokenize_blocks(rest, acc, header <> <<char>>)
+  end
+
+  defp extract_balanced_body(<<>>, _depth, _acc), do: :error
+
+  defp extract_balanced_body(<<"{", rest::binary>>, depth, acc) do
+    extract_balanced_body(rest, depth + 1, acc <> "{")
+  end
+
+  defp extract_balanced_body(<<"}", rest::binary>>, 1, acc) do
+    {:ok, acc, rest}
+  end
+
+  defp extract_balanced_body(<<"}", rest::binary>>, depth, acc) do
+    extract_balanced_body(rest, depth - 1, acc <> "}")
+  end
+
+  defp extract_balanced_body(<<char, rest::binary>>, depth, acc) do
+    extract_balanced_body(rest, depth, acc <> <<char>>)
   end
 
   defp process_block({"", _body}, state), do: state
@@ -103,9 +136,9 @@ defmodule Press.CSS.Parser do
         |> String.split(",")
         |> Enum.map(&String.trim/1)
         |> Enum.reject(&(&1 == ""))
-        |> Enum.map(fn selector_text ->
-          compounds = Selector.parse(selector_text)
-
+        |> Enum.map(&Selector.parse/1)
+        |> Enum.reject(fn compounds -> compounds == [] or compounds == [%{}] end)
+        |> Enum.map(fn compounds ->
           %Rule{
             selector: compounds,
             specificity: Selector.specificity(compounds),

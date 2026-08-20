@@ -43,7 +43,7 @@ full list later.
 
 Pure data, no logic — exercised by every later task's tests.
 
-- [ ] **Step 1: Write the implementation**
+- [x] **Step 1: Write the implementation**
 
 ```elixir
 # lib/press/css/rule.ex
@@ -136,12 +136,12 @@ defmodule Press.Style.Text do
 end
 ```
 
-- [ ] **Step 2: Compile and confirm no errors**
+- [x] **Step 2: Compile and confirm no errors**
 
 Run: `mix compile --warnings-as-errors`
 Expected: compiles cleanly, no warnings.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add lib/press/css/rule.ex lib/press/css/page_rule.ex lib/press/style/node.ex lib/press/style/text.ex
@@ -160,7 +160,7 @@ Shared parsing helpers `Press.CSS.Parser` (Task 5) calls per declaration
 value. No cascade context needed here — see the design spec's "Value
 parsing" section.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.CSS.ValueTest do
@@ -238,12 +238,12 @@ defmodule Press.CSS.ValueTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/css/value_test.exs`
 Expected: FAIL — `Press.CSS.Value` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.CSS.Value do
@@ -365,12 +365,12 @@ defmodule Press.CSS.Value do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/css/value_test.exs`
 Expected: PASS (14 tests, 0 failures)
 
-- [ ] **Step 5: Add the deferred full-color-list TODO and commit**
+- [x] **Step 5: Add the deferred full-color-list TODO and commit**
 
 Add to `TODO.md`:
 
@@ -400,7 +400,7 @@ shorthands expand into separate longhand keys; `Press.CSS.Parser` (Task
 5) uses `expand_box/3` for elements and `expand_page_margin/1` for
 `@page`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.CSS.ShorthandTest do
@@ -531,12 +531,12 @@ defmodule Press.CSS.ShorthandTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/css/shorthand_test.exs`
 Expected: FAIL — `Press.CSS.Shorthand` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.CSS.Shorthand do
@@ -625,12 +625,12 @@ defmodule Press.CSS.Shorthand do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/css/shorthand_test.exs`
 Expected: PASS (11 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/css/shorthand.ex test/press/css/shorthand_test.exs
@@ -650,7 +650,7 @@ computes specificity, and matches a parsed selector against an element
 plus its ancestor chain. No dependency on Task 2/3 — this is pure
 selector-syntax logic.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.CSS.SelectorTest do
@@ -754,12 +754,12 @@ defmodule Press.CSS.SelectorTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/css/selector_test.exs`
 Expected: FAIL — `Press.CSS.Selector` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.CSS.Selector do
@@ -851,12 +851,12 @@ defmodule Press.CSS.Selector do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/css/selector_test.exs`
 Expected: PASS (16 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/css/selector.ex test/press/css/selector_test.exs
@@ -894,7 +894,7 @@ parsing entry point — real docs, not `@moduledoc false`.
 - **Unterminated rule** (`{` with no matching `}` before end of input)
   is dropped, mirroring Phase 2's tokenizer.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.CSS.ParserTest do
@@ -1018,12 +1018,12 @@ defmodule Press.CSS.ParserTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/css/parser_test.exs`
 Expected: FAIL — `Press.CSS.Parser` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.CSS.Parser do
@@ -1245,12 +1245,12 @@ defmodule Press.CSS.Parser do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/css/parser_test.exs`
 Expected: PASS (14 tests, 1 doctest, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/css/parser.ex test/press/css/parser_test.exs
@@ -1269,7 +1269,7 @@ Holds the exact CSS text from the general spec's "Default (user-agent)
 stylesheet" section, parsed once at compile time via `Press.CSS.Parser`
 (Task 5) rather than re-parsed on every `Cascade.build/3` call.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.CSS.DefaultStylesheetTest do
@@ -1299,12 +1299,12 @@ defmodule Press.CSS.DefaultStylesheetTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/css/default_stylesheet_test.exs`
 Expected: FAIL — `Press.CSS.DefaultStylesheet` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.CSS.DefaultStylesheet do
@@ -1337,12 +1337,12 @@ defmodule Press.CSS.DefaultStylesheet do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/css/default_stylesheet_test.exs`
 Expected: PASS (3 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/css/default_stylesheet.ex test/press/css/default_stylesheet_test.exs
@@ -1375,7 +1375,7 @@ root element's computed font-size. This is a deliberate scope
 simplification following directly from Phase 2's fragment model, not
 an oversight.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```elixir
 defmodule Press.Style.CascadeTest do
@@ -1522,12 +1522,12 @@ defmodule Press.Style.CascadeTest do
 end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/style/cascade_test.exs`
 Expected: FAIL — `Press.Style.Cascade` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```elixir
 defmodule Press.Style.Cascade do
@@ -1705,12 +1705,12 @@ defmodule Press.Style.Cascade do
 end
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/style/cascade_test.exs`
 Expected: PASS (9 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/style/cascade.ex test/press/style/cascade_test.exs
@@ -1731,7 +1731,7 @@ git commit -m "Add Press.Style.Cascade.build/3"
 Resolves `size`/`margin` from `page_rules`, folding by appearance order
 (no specificity), with the A4/20mm defaults.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `test/press/style/cascade_test.exs` (add `alias Press.CSS.PageRule` next to the existing aliases):
 
@@ -1776,12 +1776,12 @@ Append to `test/press/style/cascade_test.exs` (add `alias Press.CSS.PageRule` ne
   end
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `mix test test/press/style/cascade_test.exs`
 Expected: FAIL — `Press.Style.Cascade.page_config/2` is undefined.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Append to `lib/press/style/cascade.ex`, inside `defmodule Press.Style.Cascade do ... end`:
 
@@ -1841,12 +1841,12 @@ Append to `lib/press/style/cascade.ex`, inside `defmodule Press.Style.Cascade do
   defp resolve_page_length({:length, n, :px}), do: n * 0.75
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `mix test test/press/style/cascade_test.exs`
 Expected: PASS (12 tests, 0 failures)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/press/style/cascade.ex test/press/style/cascade_test.exs
@@ -1866,7 +1866,7 @@ an external stylesheet, and an embedded `<style>` block, confirming all
 three stages of this phase work together. This is the acceptance test
 for Phase 3.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```elixir
 defmodule Press.Style.IntegrationTest do
@@ -1918,20 +1918,20 @@ defmodule Press.Style.IntegrationTest do
 end
 ```
 
-- [ ] **Step 2: Run the test**
+- [x] **Step 2: Run the test**
 
 Run: `mix test test/press/style/integration_test.exs`
 Expected: PASS immediately — it only exercises the already-built public
 API of Tasks 1-8. If it fails, that's a real bug in an earlier task;
 fix the relevant module (not this test).
 
-- [ ] **Step 3: Run the full suite**
+- [x] **Step 3: Run the full suite**
 
 Run: `mix test`
 Expected: all tests passing — Phase 1 + Phase 2's ~74 tests plus this
 phase's new ones, 0 failures.
 
-- [ ] **Step 4: Record two follow-ups in `TODO.md` and commit**
+- [x] **Step 4: Record two follow-ups in `TODO.md` and commit**
 
 ```markdown
 - Layout (Phase 4) must skip non-visual elements (`style`, `link`,
@@ -1950,10 +1950,10 @@ git commit -m "Add end-to-end integration test for CSS parser + cascade"
 
 ## Definition of Done
 
-- [ ] All tasks above complete, all tests passing (`mix test`).
-- [ ] `mix format --check-formatted` clean.
-- [ ] `docs/superpowers/plans/2026-07-28-css-parser-cascade.md` (this
+- [x] All tasks above complete, all tests passing (`mix test`).
+- [x] `mix format --check-formatted` clean.
+- [x] `docs/superpowers/plans/2026-07-28-css-parser-cascade.md` (this
       file) has every checkbox ticked.
-- [ ] Next phase (Phase 4 — Layout, per
+- [x] Next phase (Phase 4 — Layout, per
       `docs/superpowers/specs/2026-07-20-html-css-to-pdf-design.md`)
       gets its own spec/plan when it's time to start it.

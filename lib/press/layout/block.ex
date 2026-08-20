@@ -66,17 +66,14 @@ defmodule Press.Layout.Block do
       )
 
     box_height =
-      case {computed.height, Map.get(computed, :min_height)} do
-        {n, _} when is_number(n) ->
-          n * 1.0
-
-        {_, min_h} when is_number(min_h) ->
-          max(content_height, min_h * 1.0)
-
-        {{:percent, p}, _} ->
+      case computed.height do
+        {:percent, p} ->
           p / 100.0 * content_height
 
-        {:auto, _} ->
+        n when is_number(n) ->
+          n * 1.0
+
+        :auto ->
           content_height
       end
 

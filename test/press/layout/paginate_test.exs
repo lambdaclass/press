@@ -95,6 +95,7 @@ defmodule Press.Layout.PaginateTest do
       pages = Paginate.paginate(root, page_config())
 
       assert length(pages) == 2
+
       for page <- pages do
         tags = Enum.map(page.boxes, & &1.tag)
         assert "header" in tags

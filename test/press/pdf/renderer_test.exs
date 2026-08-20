@@ -62,7 +62,10 @@ defmodule Press.PDF.RendererTest do
       assert %Document{pages: [pdf_page]} = doc
       # Should contain background rect and border rects
       assert length(pdf_page.ops) >= 1
-      assert Enum.any?(pdf_page.ops, fn op -> match?({:rect, _, _, _, _, {0.9, 0.9, 0.9}, _, _}, op) end)
+
+      assert Enum.any?(pdf_page.ops, fn op ->
+               match?({:rect, _, _, _, _, {0.9, 0.9, 0.9}, _, _}, op)
+             end)
     end
   end
 end

@@ -17,6 +17,8 @@ defmodule Press.CSS.DefaultStylesheet do
   ul, ol { list-style-position: outside; margin: 1em 0; }
   ul { list-style-type: disc; }
   ol { list-style-type: decimal; }
+  table.table-xs th, table.table-xs td { font-size: 9pt; }
+  table.table-sm th, table.table-sm td { font-size: 10.5pt; }
   """
 
   {parsed_page_rules, parsed_style_rules} = Parser.parse(@css)

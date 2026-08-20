@@ -43,12 +43,19 @@ defmodule Press.CSS.Parser do
     "helvetica" => :helvetica,
     "arial" => :helvetica,
     "sans-serif" => :helvetica,
+    "ui-sans-serif" => :helvetica,
+    "system-ui" => :helvetica,
     "times" => :times,
     "times new roman" => :times,
     "serif" => :times,
     "courier" => :courier,
     "courier new" => :courier,
-    "monospace" => :courier
+    "monospace" => :courier,
+    "ui-monospace" => :courier,
+    "sfmono-regular" => :courier,
+    "menlo" => :courier,
+    "monaco" => :courier,
+    "consolas" => :courier
   }
 
   @spec parse(String.t()) :: {[PageRule.t()], [Rule.t()]}
@@ -174,8 +181,84 @@ defmodule Press.CSS.Parser do
     |> Enum.map(&String.split(&1, ":", parts: 2))
     |> Enum.filter(&match?([_, _], &1))
     |> Enum.map(fn [prop, value] ->
-      {prop |> String.trim() |> String.downcase(), String.trim(value)}
+      {prop |> String.trim() |> String.downcase(),
+       value |> String.trim() |> resolve_tailwind_var()}
     end)
+  end
+
+  defp resolve_tailwind_var(value) do
+    case value do
+      "var(--text-xs)" ->
+        "0.75rem"
+
+      "var(--text-sm)" ->
+        "0.875rem"
+
+      "var(--text-base)" ->
+        "1rem"
+
+      "var(--text-lg)" ->
+        "1.125rem"
+
+      "var(--text-xl)" ->
+        "1.25rem"
+
+      "var(--text-2xl)" ->
+        "1.5rem"
+
+      "var(--text-3xl)" ->
+        "1.875rem"
+
+      "var(--text-4xl)" ->
+        "2.25rem"
+
+      "var(--font-weight-bold)" ->
+        "bold"
+
+      "var(--font-weight-semibold)" ->
+        "bold"
+
+      "var(--font-weight-normal)" ->
+        "normal"
+
+      "var(--font-mono)" ->
+        "courier"
+
+      "var(--font-sans)" ->
+        "helvetica"
+
+      "var(--font-serif)" ->
+        "times"
+
+      _ ->
+        if String.starts_with?(value, "calc(") do
+          expand_calc_spacing(value)
+        else
+          value
+        end
+    end
+  end
+
+  defp expand_calc_spacing(value) do
+    case Regex.run(~r/calc\(\s*var\(--spacing\)\s*\*\s*([\d\.]+)\s*\)/, value) do
+      [_, n] ->
+        case Float.parse(n) do
+          {f, ""} -> "#{f * 0.25}rem"
+          _ -> value
+        end
+
+      nil ->
+        case Regex.run(~r/calc\(\s*([\d\.]+)\s*\*\s*var\(--spacing\)\s*\)/, value) do
+          [_, n] ->
+            case Float.parse(n) do
+              {f, ""} -> "#{f * 0.25}rem"
+              _ -> value
+            end
+
+          nil ->
+            value
+        end
+    end
   end
 
   defp parse_declaration("border", value), do: Shorthand.expand_border(value)
@@ -190,8 +273,17 @@ defmodule Press.CSS.Parser do
   end
 
   defp parse_declaration("font-family", value) do
-    name = value |> String.trim() |> String.trim("\"") |> String.trim("'") |> String.downcase()
-    {:ok, %{"font-family" => Map.get(@font_family_aliases, name, :helvetica)}}
+    alias_name =
+      value
+      |> String.split(",")
+      |> Enum.find_value(:helvetica, fn name ->
+        trimmed =
+          name |> String.trim() |> String.trim("\"") |> String.trim("'") |> String.downcase()
+
+        Map.get(@font_family_aliases, trimmed)
+      end)
+
+    {:ok, %{"font-family" => alias_name}}
   end
 
   defp parse_declaration("line-height", value) do

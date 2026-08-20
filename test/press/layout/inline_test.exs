@@ -92,8 +92,10 @@ defmodule Press.Layout.InlineTest do
       [right_box] = right_line.children
 
       assert left_box.x == 0.0
-      assert_in_delta center_box.x, 35.0, 0.01  # (100 - 30) / 2 = 35
-      assert_in_delta right_box.x, 70.0, 0.01   # 100 - 30 = 70
+      # (100 - 30) / 2 = 35
+      assert_in_delta center_box.x, 35.0, 0.01
+      # 100 - 30 = 70
+      assert_in_delta right_box.x, 70.0, 0.01
     end
 
     test "handles inline element styling with different font weights and colors" do

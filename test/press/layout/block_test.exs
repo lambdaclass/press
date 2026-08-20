@@ -66,8 +66,10 @@ defmodule Press.Layout.BlockTest do
 
       assert box.type == :block
       assert box.width == 226.0
-      assert box.x == 20.0  # margin.left
-      assert box.y == 10.0  # margin.top
+      # margin.left
+      assert box.x == 20.0
+      # margin.top
+      assert box.y == 10.0
       assert next_y > 0.0
     end
 

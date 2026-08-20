@@ -159,10 +159,18 @@ defmodule Press.Style.Cascade do
   end
 
   defp collect_specified(tagged_rules, element, ancestors) do
-    tagged_rules
-    |> Enum.filter(fn {_origin, rule} -> Selector.matches?(rule.selector, element, ancestors) end)
-    |> Enum.sort_by(fn {origin, rule} -> {origin, rule.specificity, rule.source_index} end)
-    |> Enum.reduce(%{}, fn {_origin, rule}, acc -> Map.merge(acc, rule.declarations) end)
+    from_rules =
+      tagged_rules
+      |> Enum.filter(fn {_origin, rule} ->
+        Selector.matches?(rule.selector, element, ancestors)
+      end)
+      |> Enum.sort_by(fn {origin, rule} -> {origin, rule.specificity, rule.source_index} end)
+      |> Enum.reduce(%{}, fn {_origin, rule}, acc -> Map.merge(acc, rule.declarations) end)
+
+    case Map.get(element.attrs, "style") do
+      nil -> from_rules
+      style_str -> Map.merge(from_rules, Press.CSS.Parser.parse_declarations(style_str))
+    end
   end
 
   defp resolve_font_size(specified, context) do

@@ -339,7 +339,8 @@ defmodule Press.Font.Metrics do
   @doc """
   Returns the advance width of a character in 1/1000 em units.
   """
-  def char_width(font, codepoint) when font in [:courier, :courier_bold, :courier_oblique, :courier_bold_oblique] do
+  def char_width(font, codepoint)
+      when font in [:courier, :courier_bold, :courier_oblique, :courier_bold_oblique] do
     _ = codepoint
     600
   end
@@ -352,7 +353,8 @@ defmodule Press.Font.Metrics do
     Map.get(@helvetica_bold_widths, codepoint, 600)
   end
 
-  def char_width(font, codepoint) when font in [:times_roman, :times_italic, :times_bold, :times_bold_italic] do
+  def char_width(font, codepoint)
+      when font in [:times_roman, :times_italic, :times_bold, :times_bold_italic] do
     Map.get(@times_widths, codepoint, 500)
   end
 

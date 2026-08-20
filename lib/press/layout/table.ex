@@ -90,11 +90,16 @@ defmodule Press.Layout.Table do
 
   defp count_columns(row_nodes) do
     row_nodes
-    |> Enum.map(fn %Node{children: cells} ->
-      Enum.count(cells, fn %Node{element: %{tag: tag}} -> tag in ["th", "td"] end)
+    |> Enum.map(fn row_node ->
+      row_node.children
+      |> Enum.filter(&is_cell_node/1)
+      |> Enum.count()
     end)
     |> Enum.max(fn -> 0 end)
   end
+
+  defp is_cell_node(%Node{element: %{tag: tag}}), do: tag in ["th", "td"]
+  defp is_cell_node(_), do: false
 
   defp calculate_column_widths(_row_nodes, 0, table_width), do: [table_width]
 
@@ -102,7 +107,9 @@ defmodule Press.Layout.Table do
     explicit_widths =
       for c <- 0..(col_count - 1) do
         row_nodes
-        |> Enum.find_value(nil, fn %Node{children: cells} ->
+        |> Enum.find_value(nil, fn %Node{children: children} ->
+          cells = Enum.filter(children, &is_cell_node/1)
+
           case Enum.at(cells, c) do
             %Node{computed: %{width: {:percent, p}}} ->
               p / 100.0 * table_width
@@ -133,8 +140,7 @@ defmodule Press.Layout.Table do
   end
 
   defp layout_row(%Node{} = row_node, column_widths, origin_x, row_y) do
-    cells =
-      Enum.filter(row_node.children, fn %Node{element: %{tag: tag}} -> tag in ["th", "td"] end)
+    cells = Enum.filter(row_node.children, &is_cell_node/1)
 
     {cell_boxes, _final_x} =
       cells

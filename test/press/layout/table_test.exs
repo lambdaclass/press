@@ -98,8 +98,10 @@ defmodule Press.Layout.TableTest do
       [row] = table_box.children
       [c1, c2] = row.children
 
-      assert c1.width == 120.0  # 30% of 400
-      assert c2.width == 280.0  # 70% of 400
+      # 30% of 400
+      assert c1.width == 120.0
+      # 70% of 400
+      assert c2.width == 280.0
     end
 
     test "synchronizes cell heights across the same row to the maximum cell height" do

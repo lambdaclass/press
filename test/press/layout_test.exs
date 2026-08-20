@@ -66,7 +66,8 @@ defmodule Press.LayoutTest do
       styled_tree = [
         %Node{
           element: %Press.HTML.Element{tag: "h1", attrs: %{}, children: []},
-          computed: Map.put(default_computed(), :margin, %{top: 0.0, right: 0.0, bottom: 10.0, left: 0.0}),
+          computed:
+            Map.put(default_computed(), :margin, %{top: 0.0, right: 0.0, bottom: 10.0, left: 0.0}),
           children: [%Text{content: "Title", computed: default_computed()}]
         },
         %Node{

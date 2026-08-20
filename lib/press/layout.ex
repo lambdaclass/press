@@ -80,7 +80,8 @@ defmodule Press.Layout do
   end
 
   defp filter_visual_nodes(nodes) do
-    Enum.flat_map(nodes, &filter_node/1)
+    filtered = Enum.flat_map(nodes, &filter_node/1)
+    clean_whitespace_nodes(filtered)
   end
 
   defp filter_node(%Node{element: %{tag: tag}}) when tag in @non_visual_tags, do: []
@@ -95,6 +96,49 @@ defmodule Press.Layout do
   end
 
   defp filter_node(%Text{} = text), do: [text]
+
+  defp clean_whitespace_nodes(nodes) do
+    has_blocks = Enum.any?(nodes, &is_block_node/1)
+
+    if has_blocks do
+      Enum.reject(nodes, fn
+        %Text{content: c} -> String.trim(c) == ""
+        _ -> false
+      end)
+    else
+      nodes
+    end
+  end
+
+  defp is_block_node(%Node{element: %{tag: tag}})
+       when tag in [
+              "div",
+              "p",
+              "h1",
+              "h2",
+              "h3",
+              "h4",
+              "h5",
+              "h6",
+              "table",
+              "thead",
+              "tbody",
+              "tfoot",
+              "tr",
+              "ul",
+              "ol",
+              "li",
+              "header",
+              "footer",
+              "main",
+              "section",
+              "article",
+              "blockquote",
+              "form"
+            ],
+       do: true
+
+  defp is_block_node(_), do: false
 
   defp get_top_margin(%{top: {:percent, p}}, containing_width),
     do: p / 100.0 * containing_width

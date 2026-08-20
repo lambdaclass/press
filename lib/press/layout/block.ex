@@ -109,8 +109,14 @@ defmodule Press.Layout.Block do
 
       {Enum.reverse(positioned_lines), total_height}
     else
+      clean_children =
+        Enum.reject(children, fn
+          %Text{content: c} -> String.trim(c) == ""
+          _ -> false
+        end)
+
       {boxes, total_h, _last_margin} =
-        Enum.reduce(children, {[], 0.0, 0.0}, fn child, {acc, curr_y, prev_margin_bottom} ->
+        Enum.reduce(clean_children, {[], 0.0, 0.0}, fn child, {acc, curr_y, prev_margin_bottom} ->
           case child do
             %Node{} = node ->
               curr_top_margin = get_top_margin(node.computed.margin, content_width)

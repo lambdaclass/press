@@ -118,7 +118,11 @@ defmodule Press.CSS.Parser do
     end
   end
 
-  defp parse_declarations(body) do
+  @doc """
+  Parses a CSS declarations string (e.g. from an inline `style="..."` attribute)
+  into a map of property-value pairs.
+  """
+  def parse_declarations(body) do
     body
     |> split_declarations()
     |> Enum.reduce(%{}, fn {property, value}, acc ->

@@ -39,6 +39,15 @@ defmodule Press.HTML.Tokenizer do
   # --- Right after "<": decide comment / end tag / start tag / literal ---
 
   defp scan_tag_start("!--" <> rest, tokens), do: skip_comment(rest, tokens)
+
+  defp scan_tag_start("!" <> rest, tokens) do
+    if String.starts_with?(String.upcase(rest), "DOCTYPE") do
+      skip_doctype(rest, tokens)
+    else
+      scan_text(rest, emit_text("<!", tokens))
+    end
+  end
+
   defp scan_tag_start("/" <> rest, tokens), do: scan_end_tag(rest, tokens)
 
   defp scan_tag_start(<<c, _::binary>> = rest, tokens) when c in ?a..?z or c in ?A..?Z do
@@ -49,7 +58,7 @@ defmodule Press.HTML.Tokenizer do
     scan_text(rest, emit_text("<", tokens))
   end
 
-  # --- Comments ---
+  # --- Comments & Doctype ---
 
   defp skip_comment(input, tokens) do
     case :binary.match(input, "-->") do
@@ -58,6 +67,17 @@ defmodule Press.HTML.Tokenizer do
 
       {pos, _len} ->
         rest = binary_part(input, pos + 3, byte_size(input) - pos - 3)
+        scan_text(rest, tokens)
+    end
+  end
+
+  defp skip_doctype(input, tokens) do
+    case :binary.match(input, ">") do
+      :nomatch ->
+        tokens
+
+      {pos, _len} ->
+        rest = binary_part(input, pos + 1, byte_size(input) - pos - 1)
         scan_text(rest, tokens)
     end
   end

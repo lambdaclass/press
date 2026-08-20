@@ -1,22 +1,45 @@
 defmodule Press.CSS.Selector do
   @moduledoc false
 
+  @doc """
+  Parses a selector string into a list of compound selectors.
+  Returns nil if the selector is invalid or should be skipped (e.g. interactive states).
+  """
   def parse(text) do
-    text
-    |> String.trim()
-    |> String.split(~r/\s+/)
-    |> Enum.map(&parse_compound/1)
+    text = String.trim(text)
+
+    if Regex.match?(~r/:(?:hover|focus|active|focus-within|focus-visible|visited|target)\b/, text) do
+      nil
+    else
+      compounds =
+        text
+        |> String.split(~r/\s+/)
+        |> Enum.map(&parse_compound/1)
+
+      if Enum.all?(compounds, &(&1 != nil)) and compounds != [] do
+        compounds
+      else
+        nil
+      end
+    end
   end
 
-  defp parse_compound(text) do
-    case Regex.run(~r/^([A-Za-z][A-Za-z0-9_-]*)?((?:[.#][A-Za-z0-9_-]+)*)$/, text) do
-      [_, type, rest] ->
-        %{}
-        |> maybe_put_type(type)
-        |> apply_class_and_id(rest)
+  defp parse_compound("*"), do: %{universal: true}
 
-      nil ->
-        %{}
+  defp parse_compound(text) do
+    cleaned = Regex.replace(~r/::[a-zA-Z-]+/, text, "")
+
+    case Regex.run(~r/^([A-Za-z][A-Za-z0-9_-]*)?((?:[.#][A-Za-z0-9_-]+)*)$/, cleaned) do
+      [_, type, rest] when type != "" or rest != "" ->
+        res =
+          %{}
+          |> maybe_put_type(type)
+          |> apply_class_and_id(rest)
+
+        if map_size(res) == 0, do: nil, else: res
+
+      _ ->
+        nil
     end
   end
 
@@ -62,6 +85,8 @@ defmodule Press.CSS.Selector do
       match_ancestors(compounds, older)
     end
   end
+
+  defp compound_matches?(%{universal: true}, _element), do: true
 
   defp compound_matches?(compound, element) do
     type_matches?(compound, element) and id_matches?(compound, element) and

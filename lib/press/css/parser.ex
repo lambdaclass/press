@@ -172,11 +172,9 @@ defmodule Press.CSS.Parser do
 
       new_rules =
         header
-        |> String.split(",")
-        |> Enum.map(&String.trim/1)
-        |> Enum.reject(&(&1 == ""))
+        |> split_balanced_commas()
         |> Enum.map(&Selector.parse/1)
-        |> Enum.reject(fn compounds -> compounds == [] or compounds == [%{}] end)
+        |> Enum.reject(&is_nil/1)
         |> Enum.map(fn compounds ->
           %Rule{
             selector: compounds,
@@ -188,6 +186,38 @@ defmodule Press.CSS.Parser do
 
       {page_acc, Enum.reverse(new_rules) ++ style_acc, page_idx, style_idx + 1}
     end
+  end
+
+  defp split_balanced_commas(text) do
+    tokenize_commas(text, 0, 0, <<>>, [])
+  end
+
+  defp tokenize_commas(<<>>, _paren, _bracket, acc, list) do
+    Enum.reverse([String.trim(acc) | list]) |> Enum.reject(&(&1 == ""))
+  end
+
+  defp tokenize_commas(<<",", rest::binary>>, 0, 0, acc, list) do
+    tokenize_commas(rest, 0, 0, <<>>, [String.trim(acc) | list])
+  end
+
+  defp tokenize_commas(<<"(", rest::binary>>, paren, bracket, acc, list) do
+    tokenize_commas(rest, paren + 1, bracket, acc <> "(", list)
+  end
+
+  defp tokenize_commas(<<")", rest::binary>>, paren, bracket, acc, list) do
+    tokenize_commas(rest, max(0, paren - 1), bracket, acc <> ")", list)
+  end
+
+  defp tokenize_commas(<<"[", rest::binary>>, paren, bracket, acc, list) do
+    tokenize_commas(rest, paren, bracket + 1, acc <> "[", list)
+  end
+
+  defp tokenize_commas(<<"]", rest::binary>>, paren, bracket, acc, list) do
+    tokenize_commas(rest, paren, max(0, bracket - 1), acc <> "]", list)
+  end
+
+  defp tokenize_commas(<<char, rest::binary>>, paren, bracket, acc, list) do
+    tokenize_commas(rest, paren, bracket, acc <> <<char>>, list)
   end
 
   @doc """

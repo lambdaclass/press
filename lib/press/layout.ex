@@ -11,8 +11,8 @@ defmodule Press.Layout do
   @doc """
   Lays out a styled tree according to page dimensions and margins.
   """
-  @spec build([Node.t() | Text.t()], map()) :: Box.t()
-  def build(styled_tree, page_config) do
+  @spec build([Node.t() | Text.t()], map(), map()) :: Box.t()
+  def build(styled_tree, page_config, images \\ %{}) do
     {page_width, _page_height} = page_config.size
     margin = page_config.margin
 
@@ -36,13 +36,30 @@ defmodule Press.Layout do
             consumed_height = next_y_abs - origin_y
             {[table_box | acc], consumed_height, child_margin_bottom}
 
+          %Node{element: %{tag: "img"}} = img_node ->
+            curr_top_margin = get_top_margin(img_node.computed.margin, content_width)
+            margin_gap = max(prev_margin_bottom, curr_top_margin)
+            child_start_y = origin_y + curr_y + margin_gap - curr_top_margin
+
+            {img_box, next_y_abs, child_margin_bottom} =
+              Press.Layout.Image.layout_image(
+                img_node,
+                images,
+                content_width,
+                origin_x,
+                child_start_y
+              )
+
+            consumed_height = next_y_abs - origin_y
+            {[img_box | acc], consumed_height, child_margin_bottom}
+
           %Node{} = node ->
             curr_top_margin = get_top_margin(node.computed.margin, content_width)
             margin_gap = max(prev_margin_bottom, curr_top_margin)
             child_start_y = origin_y + curr_y + margin_gap - curr_top_margin
 
             {block_box, next_y_abs, child_margin_bottom} =
-              Block.layout_block(node, content_width, origin_x, child_start_y)
+              Block.layout_block(node, content_width, origin_x, child_start_y, images)
 
             consumed_height = next_y_abs - origin_y
             {[block_box | acc], consumed_height, child_margin_bottom}

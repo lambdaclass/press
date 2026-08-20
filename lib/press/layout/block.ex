@@ -8,7 +8,7 @@ defmodule Press.Layout.Block do
   Lays out a block element or container.
   Returns `{box, next_y, margin_bottom}`.
   """
-  def layout_block(%Node{} = node, containing_width, container_x, start_y) do
+  def layout_block(%Node{} = node, containing_width, container_x, start_y, images \\ %{}) do
     computed = node.computed
 
     # 1. Resolve box dimensions (percentages against containing_width)
@@ -45,7 +45,8 @@ defmodule Press.Layout.Block do
         content_width,
         content_origin_x,
         content_origin_y,
-        computed.text_align
+        computed.text_align,
+        images
       )
 
     box_height =
@@ -84,11 +85,13 @@ defmodule Press.Layout.Block do
     {box, next_y, margin.bottom}
   end
 
-  def layout_children([], _content_width, _origin_x, _origin_y, _text_align) do
+  def layout_children(children, content_width, origin_x, origin_y, text_align, images \\ %{})
+
+  def layout_children([], _content_width, _origin_x, _origin_y, _text_align, _images) do
     {[], 0.0}
   end
 
-  def layout_children(children, content_width, origin_x, origin_y, text_align) do
+  def layout_children(children, content_width, origin_x, origin_y, text_align, images) do
     if all_inline?(children) do
       line_boxes = Inline.wrap(children, content_width, text_align)
 
@@ -118,6 +121,23 @@ defmodule Press.Layout.Block do
       {boxes, total_h, _last_margin} =
         Enum.reduce(clean_children, {[], 0.0, 0.0}, fn child, {acc, curr_y, prev_margin_bottom} ->
           case child do
+            %Node{element: %{tag: "img"}} = img_node ->
+              curr_top_margin = get_top_margin(img_node.computed.margin, content_width)
+              margin_gap = max(prev_margin_bottom, curr_top_margin)
+              child_start_y = origin_y + curr_y + margin_gap - curr_top_margin
+
+              {child_box, next_y_abs, child_margin_bottom} =
+                Press.Layout.Image.layout_image(
+                  img_node,
+                  images,
+                  content_width,
+                  origin_x,
+                  child_start_y
+                )
+
+              child_consumed_height = next_y_abs - origin_y
+              {[child_box | acc], child_consumed_height, child_margin_bottom}
+
             %Node{} = node ->
               curr_top_margin = get_top_margin(node.computed.margin, content_width)
               margin_gap = max(prev_margin_bottom, curr_top_margin)
@@ -125,7 +145,7 @@ defmodule Press.Layout.Block do
               child_start_y = origin_y + curr_y + margin_gap - curr_top_margin
 
               {child_box, next_y_abs, child_margin_bottom} =
-                layout_block(node, content_width, origin_x, child_start_y)
+                layout_block(node, content_width, origin_x, child_start_y, images)
 
               child_consumed_height = next_y_abs - origin_y
 

@@ -29,6 +29,7 @@ defmodule Press do
   @spec render(String.t(), keyword()) :: {:ok, binary()} | {:error, term()}
   def render(html, opts \\ []) when is_binary(html) and is_list(opts) do
     external_css = Keyword.get(opts, :css, "")
+    images = Keyword.get(opts, :images, %{})
 
     # 1. Parse HTML
     dom = HTMLParser.parse(html)
@@ -45,7 +46,7 @@ defmodule Press do
     styled_tree = Cascade.build(dom, ext_style_rules, emb_style_rules)
 
     # 5. Layout
-    root_box = Layout.build(styled_tree, page_config)
+    root_box = Layout.build(styled_tree, page_config, images)
 
     # 6. Pagination
     pages = Paginate.paginate(root_box, page_config)

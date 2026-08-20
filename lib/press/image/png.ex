@@ -31,7 +31,10 @@ defmodule Press.Image.PNG do
     end
   end
 
-  defp read_chunks(<<len::32, type::binary-size(4), data::binary-size(len), _crc::32, rest::binary>>, chunks) do
+  defp read_chunks(
+         <<len::32, type::binary-size(4), data::binary-size(len), _crc::32, rest::binary>>,
+         chunks
+       ) do
     new_chunks =
       case type do
         "IHDR" -> %{chunks | ihdr: parse_ihdr(data)}
@@ -51,7 +54,10 @@ defmodule Press.Image.PNG do
 
   defp read_chunks(_, _), do: :error
 
-  defp parse_ihdr(<<width::32, height::32, bit_depth::8, color_type::8, _comp::8, _filter::8, interlace::8>>) do
+  defp parse_ihdr(
+         <<width::32, height::32, bit_depth::8, color_type::8, _comp::8, _filter::8,
+           interlace::8>>
+       ) do
     %{
       width: width,
       height: height,
@@ -63,7 +69,10 @@ defmodule Press.Image.PNG do
 
   defp parse_ihdr(_), do: nil
 
-  defp process_png(%{ihdr: %{width: w, height: h, color_type: color_type, bit_depth: 8, interlace: 0}} = chunks) do
+  defp process_png(
+         %{ihdr: %{width: w, height: h, color_type: color_type, bit_depth: 8, interlace: 0}} =
+           chunks
+       ) do
     idat_binary = chunks.idat |> Enum.reverse() |> IO.iodata_to_binary()
 
     case safe_uncompress(idat_binary) do
@@ -135,7 +144,8 @@ defmodule Press.Image.PNG do
 
   defp do_unfilter(type, [x | rest_x], [up | rest_up], bpp, idx, raw_window, acc) do
     left = if idx >= bpp, do: Enum.at(raw_window, bpp - 1, 0), else: 0
-    up_left = if idx >= bpp, do: Enum.at(rest_up, -1, 0), else: 0 # previous up-left
+    # previous up-left
+    up_left = if idx >= bpp, do: Enum.at(rest_up, -1, 0), else: 0
 
     raw =
       case type do

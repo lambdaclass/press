@@ -7,7 +7,11 @@ defmodule Press.PDF.ContentStream do
     Enum.map_join(ops, "\n", &render_op(&1, font_resource_names, image_resource_names))
   end
 
-  defp render_op({:text, x, y, font, size, {r, g, b}, text}, font_resource_names, _image_resource_names) do
+  defp render_op(
+         {:text, x, y, font, size, {r, g, b}, text},
+         font_resource_names,
+         _image_resource_names
+       ) do
     resource = Map.fetch!(font_resource_names, font)
 
     Enum.join(
@@ -25,7 +29,11 @@ defmodule Press.PDF.ContentStream do
     )
   end
 
-  defp render_op({:rect, x, y, w, h, fill, stroke, stroke_width}, _font_resource_names, _image_resource_names) do
+  defp render_op(
+         {:rect, x, y, w, h, fill, stroke, stroke_width},
+         _font_resource_names,
+         _image_resource_names
+       ) do
     ["q"]
     |> add_fill_color(fill)
     |> add_stroke_color(stroke, stroke_width)

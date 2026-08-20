@@ -5,10 +5,48 @@ defmodule Press.Image.JPEGTest do
 
   # Minimal 10x20 RGB JPEG structure with SOI, SOF0, and EOI markers
   @sample_jpeg <<
-    0xFF, 0xD8, # SOI
-    0xFF, 0xE0, 0x00, 0x10, "JFIF", 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, # APP0
-    0xFF, 0xC0, 0x00, 0x11, 8, 0x00, 0x14, 0x00, 0x0A, 3, 1, 0x11, 0, 2, 0x11, 0, 3, 0x11, 0, # SOF0: 8-bit, 20px high, 10px wide, 3 components
-    0xFF, 0xD9 # EOI
+    # SOI
+    0xFF,
+    0xD8,
+    # APP0
+    0xFF,
+    0xE0,
+    0x00,
+    0x10,
+    "JFIF",
+    0,
+    1,
+    1,
+    0,
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    # SOF0: 8-bit, 20px high, 10px wide, 3 components
+    0xFF,
+    0xC0,
+    0x00,
+    0x11,
+    8,
+    0x00,
+    0x14,
+    0x00,
+    0x0A,
+    3,
+    1,
+    0x11,
+    0,
+    2,
+    0x11,
+    0,
+    3,
+    0x11,
+    0,
+    # EOI
+    0xFF,
+    0xD9
   >>
 
   describe "parse/1" do

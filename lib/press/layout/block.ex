@@ -80,6 +80,14 @@ defmodule Press.Layout.Block do
     total_outer_height =
       box_height + padding.top + padding.bottom + border_width.top + border_width.bottom
 
+    children_boxes =
+      if Map.get(computed, :vertical_align, :baseline) == :middle and box_height > content_height do
+        y_offset = (box_height - content_height) / 2.0
+        Enum.map(children_boxes, &shift_box_y(&1, y_offset))
+      else
+        children_boxes
+      end
+
     box = %Box{
       type: :block,
       tag: node.element.tag,
@@ -231,4 +239,12 @@ defmodule Press.Layout.Block do
   defp resolve_dimension({:percent, p}, containing_width), do: p / 100.0 * containing_width
   defp resolve_dimension(n, _containing_width) when is_number(n), do: n * 1.0
   defp resolve_dimension(_, _), do: 0.0
+
+  defp shift_box_y(%Box{children: children} = box, y_offset) do
+    %Box{
+      box
+      | y: box.y + y_offset,
+        children: Enum.map(children, &shift_box_y(&1, y_offset))
+    }
+  end
 end

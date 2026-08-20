@@ -250,11 +250,25 @@ defmodule Press.Layout.Table do
       end)
 
     cell_boxes = Enum.reverse(cell_boxes)
-    row_height = Enum.map(cell_boxes, & &1.height) |> Enum.max(fn -> 0.0 end)
+    content_row_height = Enum.map(cell_boxes, & &1.height) |> Enum.max(fn -> 0.0 end)
+
+    specified_row_height =
+      case row_node.computed.height do
+        n when is_number(n) -> n * 1.0
+        _ -> 0.0
+      end
+
+    row_height = max(content_row_height, specified_row_height)
 
     stretched_cells =
       Enum.map(cell_boxes, fn cell ->
-        %Box{cell | height: row_height}
+        if row_height > cell.height do
+          y_offset = (row_height - cell.height) / 2.0
+          adjusted_children = Enum.map(cell.children, &shift_box_y(&1, y_offset))
+          %Box{cell | height: row_height, children: adjusted_children}
+        else
+          %Box{cell | height: row_height}
+        end
       end)
 
     row_width = Enum.sum(column_widths)
@@ -271,6 +285,14 @@ defmodule Press.Layout.Table do
     }
 
     {row_box, row_height}
+  end
+
+  defp shift_box_y(%Box{children: children} = box, y_offset) do
+    %Box{
+      box
+      | y: box.y + y_offset,
+        children: Enum.map(children, &shift_box_y(&1, y_offset))
+    }
   end
 
   defp resolve_box_dimensions(%{top: t, right: r, bottom: b, left: l}, containing_width) do

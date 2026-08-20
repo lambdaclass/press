@@ -19,6 +19,8 @@ defmodule Press.Style.Cascade do
     font_weight: :normal,
     font_style: :normal,
     text_align: :left,
+    vertical_align: :baseline,
+    text_transform: :none,
     list_style_type: :disc,
     list_style_position: :outside
   }
@@ -31,6 +33,8 @@ defmodule Press.Style.Cascade do
     {:font_weight, "font-weight"},
     {:font_style, "font-style"},
     {:text_align, "text-align"},
+    {:vertical_align, "vertical-align"},
+    {:text_transform, "text-transform"},
     {:list_style_type, "list-style-type"},
     {:list_style_position, "list-style-position"}
   ]
@@ -61,6 +65,14 @@ defmodule Press.Style.Cascade do
   end
 
   defp build_node(%HTML.Text{content: content}, _tagged_rules, context) do
+    transformed_content =
+      case Map.get(context.inherited, :text_transform, :none) do
+        :uppercase -> String.upcase(content)
+        :lowercase -> String.downcase(content)
+        :capitalize -> String.capitalize(content)
+        _ -> content
+      end
+
     computed =
       context.inherited
       |> Map.put(:font_size, context.font_size)
@@ -69,7 +81,7 @@ defmodule Press.Style.Cascade do
         resolve_length(context.line_height_specified, context.font_size, context.root_font_size)
       )
 
-    %Text{content: content, computed: computed}
+    %Text{content: transformed_content, computed: computed}
   end
 
   defp build_node(%HTML.Element{} = element, tagged_rules, context) do

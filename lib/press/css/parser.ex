@@ -30,13 +30,45 @@ defmodule Press.CSS.Parser do
   @keyword_properties %{
     "font-weight" => [:normal, :bold],
     "font-style" => [:normal, :italic],
-    "text-align" => [:left, :right, :center],
+    "text-align" => [:left, :right, :center, :justify],
+    "vertical-align" => [:top, :middle, :bottom, :baseline],
+    "text-transform" => [:uppercase, :lowercase, :capitalize, :none],
     "list-style-type" => [:disc, :decimal, :none],
     "list-style-position" => [:outside, :inside],
     "box-sizing" => [:"content-box", :"border-box"],
     "border-collapse" => [:collapse, :separate],
     "page-break-before" => [:auto, :always],
     "page-break-after" => [:auto, :always]
+  }
+
+  @side_length_properties %{
+    "margin-top" => "margin-top",
+    "margin-right" => "margin-right",
+    "margin-bottom" => "margin-bottom",
+    "margin-left" => "margin-left",
+    "padding-top" => "padding-top",
+    "padding-right" => "padding-right",
+    "padding-bottom" => "padding-bottom",
+    "padding-left" => "padding-left",
+    "border-top-width" => "border-width-top",
+    "border-right-width" => "border-width-right",
+    "border-bottom-width" => "border-width-bottom",
+    "border-left-width" => "border-width-left",
+    "border-width-top" => "border-width-top",
+    "border-width-right" => "border-width-right",
+    "border-width-bottom" => "border-width-bottom",
+    "border-width-left" => "border-width-left"
+  }
+
+  @side_color_properties %{
+    "border-top-color" => "border-color-top",
+    "border-right-color" => "border-color-right",
+    "border-bottom-color" => "border-color-bottom",
+    "border-left-color" => "border-color-left",
+    "border-color-top" => "border-color-top",
+    "border-color-right" => "border-color-right",
+    "border-color-bottom" => "border-color-bottom",
+    "border-color-left" => "border-color-left"
   }
 
   @font_family_aliases %{
@@ -263,6 +295,11 @@ defmodule Press.CSS.Parser do
 
   defp parse_declaration("border", value), do: Shorthand.expand_border(value)
 
+  defp parse_declaration("border-top", value), do: expand_directional_border("top", value)
+  defp parse_declaration("border-right", value), do: expand_directional_border("right", value)
+  defp parse_declaration("border-bottom", value), do: expand_directional_border("bottom", value)
+  defp parse_declaration("border-left", value), do: expand_directional_border("left", value)
+
   defp parse_declaration("border-style", value) do
     # Not in @box_shorthand_properties: a closure (as opposed to a
     # remote function capture like &Value.parse_length/1) can't be
@@ -270,6 +307,30 @@ defmodule Press.CSS.Parser do
     # BEAM constant pool at compile time. Handled as its own clause
     # instead.
     Shorthand.expand_box("border-style", value, fn v -> Value.parse_keyword(v, [:solid]) end)
+  end
+
+  defp parse_declaration("padding-inline", value) do
+    with {:ok, v} <- Value.parse_length(value) do
+      {:ok, %{"padding-left" => v, "padding-right" => v}}
+    end
+  end
+
+  defp parse_declaration("padding-block", value) do
+    with {:ok, v} <- Value.parse_length(value) do
+      {:ok, %{"padding-top" => v, "padding-bottom" => v}}
+    end
+  end
+
+  defp parse_declaration("margin-inline", value) do
+    with {:ok, v} <- Value.parse_length(value) do
+      {:ok, %{"margin-left" => v, "margin-right" => v}}
+    end
+  end
+
+  defp parse_declaration("margin-block", value) do
+    with {:ok, v} <- Value.parse_length(value) do
+      {:ok, %{"margin-top" => v, "margin-bottom" => v}}
+    end
   end
 
   defp parse_declaration("font-family", value) do
@@ -295,6 +356,12 @@ defmodule Press.CSS.Parser do
       parse_fun = Map.get(@box_shorthand_properties, property) ->
         Shorthand.expand_box(property, value, parse_fun)
 
+      norm_prop = Map.get(@side_length_properties, property) ->
+        with {:ok, v} <- Value.parse_length(value), do: {:ok, %{norm_prop => v}}
+
+      norm_color = Map.get(@side_color_properties, property) ->
+        with {:ok, v} <- Value.parse_color(value), do: {:ok, %{norm_color => v}}
+
       property in @color_properties ->
         with {:ok, v} <- Value.parse_color(value), do: {:ok, %{property => v}}
 
@@ -306,6 +373,21 @@ defmodule Press.CSS.Parser do
 
       true ->
         :error
+    end
+  end
+
+  defp expand_directional_border(side, value) do
+    with {:ok, map} <- Shorthand.expand_border(value) do
+      declarations =
+        %{
+          "border-width-#{side}" => Map.get(map, "border-width-top"),
+          "border-color-#{side}" => Map.get(map, "border-color-top"),
+          "border-style-#{side}" => Map.get(map, "border-style-top")
+        }
+        |> Enum.reject(fn {_, v} -> is_nil(v) end)
+        |> Map.new()
+
+      {:ok, declarations}
     end
   end
 

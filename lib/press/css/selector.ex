@@ -8,9 +8,10 @@ defmodule Press.CSS.Selector do
   def parse(text) do
     text = String.trim(text)
 
-    if Regex.match?(~r/:(?:hover|focus|active|focus-within|focus-visible|visited|target)\b/, text) do
-      nil
-    else
+    unless Regex.match?(
+             ~r/:(?:hover|focus|active|focus-within|focus-visible|visited|target)\b/,
+             text
+           ) do
       compounds =
         text
         |> String.split(~r/\s+/)
@@ -18,8 +19,6 @@ defmodule Press.CSS.Selector do
 
       if Enum.all?(compounds, &(&1 != nil)) and compounds != [] do
         compounds
-      else
-        nil
       end
     end
   end

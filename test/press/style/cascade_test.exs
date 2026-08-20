@@ -182,5 +182,80 @@ defmodule Press.Style.CascadeTest do
       assert_in_delta elem(config.size, 0), 595.28, 0.1
       assert_in_delta elem(config.size, 1), 841.89, 0.1
     end
+
+    test "resolves legal page size" do
+      external = [%PageRule{declarations: %{"size" => :legal}, source_index: 0}]
+      config = Cascade.page_config(external, [])
+      assert config.size == {612.0, 1008.0}
+    end
+  end
+
+  describe "units and inline styles" do
+    test "parses and applies inline style attribute over CSS rules" do
+      dom = [
+        %HTML.Element{
+          tag: "p",
+          attrs: %{"style" => "color: blue; margin-top: 15px;"},
+          children: []
+        }
+      ]
+
+      rules = [rule("p", {0, 0, 1}, %{"color" => {1.0, 0.0, 0.0}})]
+
+      assert [%Node{computed: computed}] = Cascade.build(dom, rules, [])
+      assert computed.color == {0.0, 0.0, 1.0}
+      assert computed.margin.top == 15.0 * 0.75
+    end
+
+    test "applies text-transform to text nodes" do
+      dom_upper = [
+        %HTML.Element{
+          tag: "p",
+          attrs: %{"style" => "text-transform: uppercase;"},
+          children: [%HTML.Text{content: "hello"}]
+        }
+      ]
+
+      assert [%Node{children: [%Text{content: "HELLO"}]}] = Cascade.build(dom_upper, [], [])
+
+      dom_cap = [
+        %HTML.Element{
+          tag: "p",
+          attrs: %{"style" => "text-transform: capitalize;"},
+          children: [%HTML.Text{content: "hello"}]
+        }
+      ]
+
+      assert [%Node{children: [%Text{content: "Hello"}]}] = Cascade.build(dom_cap, [], [])
+
+      dom_lower = [
+        %HTML.Element{
+          tag: "p",
+          attrs: %{"style" => "text-transform: lowercase;"},
+          children: [%HTML.Text{content: "HELLO"}]
+        }
+      ]
+
+      assert [%Node{children: [%Text{content: "hello"}]}] = Cascade.build(dom_lower, [], [])
+    end
+
+    test "resolves units across rem, in, cm, mm, px" do
+      dom = [
+        %HTML.Element{
+          tag: "div",
+          attrs: %{
+            "style" =>
+              "margin-top: 1in; margin-right: 2.54cm; margin-bottom: 25.4mm; margin-left: 2rem;"
+          },
+          children: []
+        }
+      ]
+
+      assert [%Node{computed: computed}] = Cascade.build(dom, [], [])
+      assert computed.margin.top == 72.0
+      assert_in_delta computed.margin.right, 72.0, 0.01
+      assert_in_delta computed.margin.bottom, 72.0, 0.01
+      assert computed.margin.left == 24.0
+    end
   end
 end

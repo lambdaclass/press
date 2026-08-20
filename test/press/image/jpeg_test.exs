@@ -59,8 +59,38 @@ defmodule Press.Image.JPEGTest do
       assert image.data == @sample_jpeg
     end
 
-    test "returns error on non-JPEG data" do
+    test "extracts grayscale color space from 1-component SOF0 JPEG" do
+      gray_jpeg = <<
+        0xFF,
+        0xD8,
+        0xFF,
+        0xC0,
+        0x00,
+        0x0B,
+        8,
+        0x00,
+        0x14,
+        0x00,
+        0x0A,
+        1,
+        1,
+        0x11,
+        0,
+        0xFF,
+        0xD9
+      >>
+
+      assert {:ok, image} = JPEG.parse(gray_jpeg)
+      assert image.color_space == :gray
+    end
+
+    test "returns error on non-JPEG or truncated data" do
       assert {:error, :invalid_jpeg} = JPEG.parse("not a jpeg")
+
+      assert {:error, :invalid_jpeg} =
+               JPEG.parse(<<0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x50, "truncated">>)
+
+      assert {:error, :invalid_jpeg} = JPEG.parse(<<0xFF, 0xD8, 0xFF, 0xD9>>)
     end
   end
 end

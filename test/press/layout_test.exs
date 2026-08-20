@@ -99,5 +99,26 @@ defmodule Press.LayoutTest do
       assert table_box.type == :table
       assert table_box.y >= h1_box.y + h1_box.height
     end
+
+    test "lays out top-level images and raw text nodes with percentage margins" do
+      styled_tree = [
+        %Node{
+          element: %Press.HTML.Element{tag: "img", attrs: %{"src" => "img.png"}},
+          computed:
+            Map.put(default_computed(), :margin, %{
+              top: {:percent, 5.0},
+              right: 0.0,
+              bottom: 0.0,
+              left: 0.0
+            }),
+          children: []
+        },
+        %Text{content: "Top level paragraph text", computed: default_computed()}
+      ]
+
+      root = Layout.build(styled_tree, page_config())
+      assert %Box{type: :root} = root
+      assert length(root.children) == 2
+    end
   end
 end

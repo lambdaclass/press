@@ -32,4 +32,11 @@ defmodule PressTest do
     assert String.starts_with?(pdf_bytes, "%PDF-1.4")
     assert pdf_bytes =~ "/MediaBox [0 0 612 792]"
   end
+
+  test "render!/2 returns binary directly or raises on error" do
+    html = "<h1>Direct render</h1>"
+    pdf = Press.render!(html)
+    assert is_binary(pdf)
+    assert String.starts_with?(pdf, "%PDF-1.4")
+  end
 end

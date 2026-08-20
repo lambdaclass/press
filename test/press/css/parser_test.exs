@@ -119,4 +119,79 @@ defmodule Press.CSS.ParserTest do
              "size" => {:custom, {:length, 210.0, :mm}, {:length, 297.0, :mm}}
            }
   end
+
+  test "parses keyword properties and side-specific properties" do
+    css = """
+    p {
+      text-align: center;
+      vertical-align: middle;
+      text-transform: uppercase;
+      list-style-type: disc;
+      box-sizing: border-box;
+      border-collapse: collapse;
+      page-break-before: always;
+      padding-top: 5px;
+      padding-left: 10px;
+      margin-bottom: 12pt;
+      border-bottom: 2px solid blue;
+    }
+    """
+
+    {[], [rule]} = Parser.parse(css)
+
+    assert rule.declarations["text-align"] == :center
+    assert rule.declarations["vertical-align"] == :middle
+    assert rule.declarations["text-transform"] == :uppercase
+    assert rule.declarations["box-sizing"] == :"border-box"
+    assert rule.declarations["border-collapse"] == :collapse
+    assert rule.declarations["page-break-before"] == :always
+    assert rule.declarations["padding-top"] == {:length, 5.0, :px}
+    assert rule.declarations["padding-left"] == {:length, 10.0, :px}
+    assert rule.declarations["margin-bottom"] == {:length, 12.0, :pt}
+  end
+
+  test "parses font aliases for times and courier" do
+    {[], [r1]} = Parser.parse("p { font-family: 'Times New Roman'; }")
+    {[], [r2]} = Parser.parse("code { font-family: monospace; }")
+    assert r1.declarations["font-family"] == :times
+    assert r2.declarations["font-family"] == :courier
+  end
+
+  test "parses rules inside @media blocks" do
+    css = """
+    @media print {
+      h1 { color: black; }
+    }
+    """
+
+    {[], [rule]} = Parser.parse(css)
+    assert rule.declarations["color"] == {0.0, 0.0, 0.0}
+  end
+
+  test "resolves tailwind CSS variables and calc expressions" do
+    css = """
+    .card {
+      font-size: var(--text-xs);
+      font-weight: var(--font-weight-semibold);
+      font-family: var(--font-mono);
+      padding: calc(var(--spacing) * 4);
+      margin-inline: 1rem;
+      margin-block: 0.5rem;
+      border-top: 1px solid #111;
+      border-left: 2px solid #222;
+      border-style: solid;
+    }
+    """
+
+    {[], [rule]} = Parser.parse(css)
+    assert rule.declarations["font-size"] == {:length, 0.75, :rem}
+    assert rule.declarations["font-weight"] == :bold
+    assert rule.declarations["font-family"] == :courier
+    assert rule.declarations["padding-top"] == {:length, 1.0, :rem}
+    assert rule.declarations["margin-left"] == {:length, 1.0, :rem}
+    assert rule.declarations["margin-right"] == {:length, 1.0, :rem}
+    assert rule.declarations["margin-top"] == {:length, 0.5, :rem}
+    assert rule.declarations["border-width-top"] == {:length, 1.0, :px}
+    assert rule.declarations["border-width-left"] == {:length, 2.0, :px}
+  end
 end

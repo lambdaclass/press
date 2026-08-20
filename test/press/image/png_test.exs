@@ -71,8 +71,63 @@ defmodule Press.Image.PNGTest do
       assert uncompressed == expected
     end
 
-    test "returns error on non-PNG data" do
+    test "parses a Grayscale PNG (color type 0)" do
+      scanlines = <<0, 100, 200>>
+      png_bytes = make_png(2, 1, 0, scanlines)
+
+      assert {:ok, image} = PNG.parse(png_bytes)
+      assert image.format == :png
+      assert image.width == 2
+      assert image.height == 1
+      assert image.color_space == :gray
+      assert image.alpha_data == nil
+      assert :zlib.uncompress(image.data) == <<100, 200>>
+    end
+
+    test "parses a Grayscale+Alpha PNG (color type 4)" do
+      scanlines = <<0, 100, 255, 200, 128>>
+      png_bytes = make_png(2, 1, 4, scanlines)
+
+      assert {:ok, image} = PNG.parse(png_bytes)
+      assert image.format == :png
+      assert image.color_space == :gray
+      assert :zlib.uncompress(image.data) == <<100, 200>>
+      assert :zlib.uncompress(image.alpha_data) == <<255, 128>>
+    end
+
+    test "parses an Indexed PNG (color type 3) with PLTE chunk" do
+      palette = <<255, 0, 0, 0, 255, 0, 0, 0, 255>>
+      plte_chunk = chunk("PLTE", palette)
+      scanlines = <<0, 0, 1, 2>>
+      png_bytes = make_png(3, 1, 3, scanlines, [plte_chunk])
+
+      assert {:ok, image} = PNG.parse(png_bytes)
+      assert image.format == :png
+      assert image.color_space == :rgb
+      assert :zlib.uncompress(image.data) == <<255, 0, 0, 0, 255, 0, 0, 0, 255>>
+    end
+
+    test "handles Average (3) and Paeth (4) filter methods" do
+      line0 = <<0, 10, 20, 30, 40, 50, 60>>
+      line1 = <<3, 5, 5, 5, 5, 5, 5>>
+      line2 = <<4, 2, 2, 2, 2, 2, 2>>
+      png_bytes = make_png(2, 3, 2, line0 <> line1 <> line2)
+
+      assert {:ok, image} = PNG.parse(png_bytes)
+      assert image.height == 3
+      assert is_binary(image.data)
+    end
+
+    test "returns error on corrupt IDAT or invalid PNG data" do
       assert {:error, :invalid_png} = PNG.parse("not a png")
+      assert {:error, :invalid_png} = PNG.parse(<<137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0>>)
+
+      # Corrupted IDAT payload
+      bad_idat = chunk("IDAT", "not zlib compressed")
+      ihdr = chunk("IHDR", <<2::32, 1::32, 8, 2, 0, 0, 0>>)
+      iend = chunk("IEND", "")
+      bad_png = <<137, 80, 78, 71, 13, 10, 26, 10>> <> ihdr <> bad_idat <> iend
+      assert {:error, :invalid_png} = PNG.parse(bad_png)
     end
   end
 end

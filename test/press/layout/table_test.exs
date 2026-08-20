@@ -122,5 +122,49 @@ defmodule Press.Layout.TableTest do
       assert cell1.height == cell2.height
       assert cell1.height > 14.4
     end
+
+    test "handles thead, tbody, and tfoot sections with colspan" do
+      th_cell = %Node{
+        element: %Press.HTML.Element{tag: "th", attrs: %{"colspan" => "2"}, children: []},
+        computed: default_computed(),
+        children: [%Text{content: "Header", computed: default_computed()}]
+      }
+
+      th_row = %Node{
+        element: %Press.HTML.Element{tag: "tr", attrs: %{}, children: []},
+        computed: default_computed(),
+        children: [th_cell]
+      }
+
+      thead = %Node{
+        element: %Press.HTML.Element{tag: "thead", attrs: %{}, children: []},
+        computed: default_computed(),
+        children: [th_row]
+      }
+
+      td_cell1 = cell_node("td", "A")
+      td_cell2 = cell_node("td", "B")
+      tb_row = row_node([td_cell1, td_cell2])
+
+      tbody = %Node{
+        element: %Press.HTML.Element{tag: "tbody", attrs: %{}, children: []},
+        computed: default_computed(),
+        children: [tb_row]
+      }
+
+      table = %Node{
+        element: %Press.HTML.Element{tag: "table", attrs: %{}, children: []},
+        computed: default_computed(),
+        children: [thead, tbody]
+      }
+
+      {table_box, _next_y, _margin_bottom} = Table.layout_table(table, 300.0, 0.0, 0.0)
+
+      assert length(table_box.children) == 2
+      [r1, r2] = table_box.children
+      [header_cell] = r1.children
+      assert header_cell.width == 300.0
+      assert length(r2.children) == 2
+    end
   end
 end

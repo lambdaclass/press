@@ -95,5 +95,17 @@ defmodule Press.CSS.SelectorTest do
 
       refute Selector.matches?([%{type: "table"}, %{type: "td"}], element, [grandparent])
     end
+
+    test "universal selector matches any element" do
+      element = %Press.HTML.Element{tag: "div", attrs: %{}}
+      assert Selector.matches?([%{universal: true}], element, [])
+      assert Selector.parse("*") == [%{universal: true}]
+    end
+
+    test "strips pseudo-elements and ignores interactive pseudo-classes" do
+      assert Selector.parse("div::before") == [%{type: "div"}]
+      assert Selector.parse("button:hover") == nil
+      assert Selector.parse("a:focus") == nil
+    end
   end
 end

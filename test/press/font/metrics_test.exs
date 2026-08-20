@@ -47,6 +47,11 @@ defmodule Press.Font.MetricsTest do
       assert Metrics.char_width(:times_roman, ?i) < Metrics.char_width(:times_roman, ?M)
       assert Metrics.char_width(:times_roman, ?\s) == 250
     end
+
+    test "Helvetica bold and fallback font widths" do
+      assert Metrics.char_width(:helvetica_bold, ?A) > 0
+      assert Metrics.char_width(:unknown_font, ?A) == Metrics.char_width(:helvetica, ?A)
+    end
   end
 
   describe "text_width/3" do

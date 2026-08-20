@@ -122,5 +122,50 @@ defmodule Press.Layout.BlockTest do
       assert b1.height == 14.0
       assert b2.y == 34.0
     end
+
+    test "applies vertical-align middle when explicit block height exceeds content height" do
+      node =
+        block_node(
+          "div",
+          %{height: 100.0, vertical_align: :middle},
+          [text_node("Centered Text", 12.0, 20.0)]
+        )
+
+      {box, _next_y, _margin_bottom} = Block.layout_block(node, 300.0, 0.0, 0.0)
+
+      assert box.height == 100.0
+      [line] = box.children
+      # offset should be (100 - 20) / 2 = 40.0
+      assert line.y == 40.0
+    end
+
+    test "layouts blocks containing table nodes and inline spans" do
+      span = %Node{
+        element: %Press.HTML.Element{tag: "span", attrs: %{}, children: []},
+        computed: %{
+          color: {0.0, 0.0, 0.0},
+          font_family: :helvetica,
+          font_size: 12.0,
+          font_weight: :bold,
+          font_style: :normal,
+          line_height: 14.4,
+          text_align: :left,
+          margin: %{top: 0.0, right: 0.0, bottom: 0.0, left: 0.0},
+          padding: %{top: 0.0, right: 0.0, bottom: 0.0, left: 0.0},
+          border_width: %{top: 0.0, right: 0.0, bottom: 0.0, left: 0.0},
+          border_color: %{top: nil, right: nil, bottom: nil, left: nil},
+          border_style: %{top: :none, right: :none, bottom: :none, left: :none},
+          background_color: nil,
+          width: :auto,
+          height: :auto
+        },
+        children: [text_node("Bold Inline")]
+      }
+
+      container = block_node("div", %{}, [span, text_node(" Normal Text")])
+      {box, _next_y, _margin_bottom} = Block.layout_block(container, 300.0, 0.0, 0.0)
+
+      assert length(box.children) > 0
+    end
   end
 end

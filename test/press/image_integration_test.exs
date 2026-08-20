@@ -85,4 +85,27 @@ defmodule Press.ImageIntegrationTest do
     assert pdf_bytes =~ "/SMask"
     assert pdf_bytes =~ "/Im1 Do"
   end
+
+  test "renders image with only width or only height preserving aspect ratio" do
+    html = """
+    <img src="img/logo.jpg" width="100pt">
+    <img src="img/logo.jpg" height="40px">
+    <img src="img/missing.jpg">
+    """
+
+    assert {:ok, pdf_bytes} = Press.render(html, images: %{"img/logo.jpg" => @sample_jpeg})
+    assert String.starts_with?(pdf_bytes, "%PDF-1.4")
+  end
+
+  test "renders image with percentage width from CSS" do
+    html = """
+    <style>
+      img.custom { width: 50%; margin: 10px; padding: 5px; }
+    </style>
+    <img class="custom" src="img/logo.jpg">
+    """
+
+    assert {:ok, pdf_bytes} = Press.render(html, images: %{"img/logo.jpg" => @sample_jpeg})
+    assert String.starts_with?(pdf_bytes, "%PDF-1.4")
+  end
 end

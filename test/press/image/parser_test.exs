@@ -67,5 +67,17 @@ defmodule Press.Image.ParserTest do
     test "returns error when image is not in map" do
       assert {:error, {:image_not_found, "missing.png"}} = Parser.load("missing.png", %{})
     end
+
+    test "returns error on invalid data URI format" do
+      assert {:error, :invalid_data_uri} = Parser.load("data:text/plain;base64,abc", %{})
+    end
+
+    test "returns error on invalid base64 in data URI" do
+      assert {:error, :invalid_base64} = Parser.load("data:image/png;base64,!!!invalid!!!", %{})
+    end
+
+    test "returns error on unsupported binary format" do
+      assert {:error, :unsupported_format} = Parser.load("file.gif", %{"file.gif" => "GIF89a..."})
+    end
   end
 end

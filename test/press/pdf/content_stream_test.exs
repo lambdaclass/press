@@ -30,8 +30,15 @@ defmodule Press.PDF.ContentStreamTest do
     assert result =~ <<"(caf", 0xE9, ") Tj">>
   end
 
-  test "replaces characters outside the WinAnsi/Latin-1 range with a space" do
-    ops = [{:text, 0.0, 0.0, :helvetica, 12, {0, 0, 0}, "a€b"}]
+  test "converts Euro sign and Windows-1252 specific characters" do
+    ops = [{:text, 0.0, 0.0, :helvetica, 12, {0, 0, 0}, "10 €"}]
+    result = ContentStream.render(ops, %{helvetica: "/F1"})
+
+    assert result =~ <<"(10 ", 0x80, ") Tj">>
+  end
+
+  test "replaces characters outside the WinAnsi range with a space" do
+    ops = [{:text, 0.0, 0.0, :helvetica, 12, {0, 0, 0}, "a\u{4E16}b"}]
     result = ContentStream.render(ops, %{helvetica: "/F1"})
 
     assert result =~ "(a b) Tj"

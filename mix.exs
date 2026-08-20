@@ -13,7 +13,9 @@ defmodule Press.MixProject do
       deps: deps(),
       description: "A dependency-free Elixir library for rendering HTML+CSS into PDF",
       package: package(),
-      docs: docs()
+      docs: docs(),
+      homepage_url: @source_url,
+      source_url: @source_url
     ]
   end
 

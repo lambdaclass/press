@@ -10,7 +10,7 @@ defmodule Press.CSS.ParserTest do
     assert %Rule{
              selector: [%{type: "h1"}],
              specificity: {0, 0, 1},
-             declarations: %{"color" => {1.0, 0.0, 0.0}},
+             declarations: %{"color" => {1.0, +0.0, +0.0}},
              source_index: 0
            } = rule
   end

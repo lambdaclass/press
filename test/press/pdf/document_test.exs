@@ -41,7 +41,8 @@ defmodule Press.PDF.DocumentTest do
     {doc, index} = Document.new() |> Document.add_page(595.0, 842.0)
     doc = Document.draw_text(doc, index, 0.0, 0.0, "x")
 
-    assert [%Press.PDF.Page{ops: [{:text, 0.0, 0.0, :helvetica, 12, {0, 0, 0}, "x"}]}] = doc.pages
+    assert [%Press.PDF.Page{ops: [{:text, +0.0, +0.0, :helvetica, 12, {0, 0, 0}, "x"}]}] =
+             doc.pages
   end
 
   test "draw_rect/6 appends a rect op with fill and stroke" do
@@ -62,7 +63,7 @@ defmodule Press.PDF.DocumentTest do
     {doc, index} = Document.new() |> Document.add_page(595.0, 842.0)
     doc = Document.draw_rect(doc, index, 0.0, 0.0, 1.0, 1.0)
 
-    assert [%Press.PDF.Page{ops: [{:rect, 0.0, 0.0, 1.0, 1.0, nil, nil, 1.0}]}] = doc.pages
+    assert [%Press.PDF.Page{ops: [{:rect, +0.0, +0.0, 1.0, 1.0, nil, nil, 1.0}]}] = doc.pages
   end
 
   test "draw_text/6 raises on an out-of-range page index" do

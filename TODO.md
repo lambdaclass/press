@@ -89,3 +89,9 @@
   input is generator-produced rather than hand-typed, but worth a
   proper fix (detect a second `{` between the candidate `{`/`}` pair
   and resync there instead) if it ever surfaces.
+
+- Layout (Phase 4) must skip non-visual elements (`style`, `link`,
+  `meta`, `head`) when walking the styled tree — `Press.Style.Cascade`
+  cascades them like any other element (harmless: they just get
+  default computed values with no CSS rules matching in practice), but
+  they should never be rendered.

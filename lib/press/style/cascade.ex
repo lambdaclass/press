@@ -202,4 +202,67 @@ defmodule Press.Style.Cascade do
   defp resolve_absolute_em_rem({:length, n, :in}, _fs, _r), do: n * 72.0
   defp resolve_absolute_em_rem({:length, n, :pt}, _fs, _r), do: n * 1.0
   defp resolve_absolute_em_rem({:length, n, :px}, _fs, _r), do: n * 0.75
+
+  @mm_to_pt 72.0 / 25.4
+
+  @spec page_config([Press.CSS.PageRule.t()], [Press.CSS.PageRule.t()]) :: %{
+          size: {float(), float()},
+          margin: %{top: float(), right: float(), bottom: float(), left: float()}
+        }
+  def page_config(external_page_rules, embedded_page_rules) do
+    all = DefaultStylesheet.page_rules() ++ external_page_rules ++ embedded_page_rules
+
+    size =
+      all
+      |> Enum.map(&Map.get(&1.declarations, "size"))
+      |> Enum.reject(&is_nil/1)
+      |> List.last()
+
+    margin =
+      all
+      |> Enum.map(&Map.get(&1.declarations, "margin"))
+      |> Enum.reject(&is_nil/1)
+      |> List.last()
+
+    %{size: resolve_page_size(size), margin: resolve_page_margin(margin)}
+  end
+
+  defp resolve_page_size(nil), do: {595.28, 841.89}
+  defp resolve_page_size(:a4), do: {595.28, 841.89}
+  defp resolve_page_size(:letter), do: {612.0, 792.0}
+  defp resolve_page_size(:legal), do: {612.0, 1008.0}
+
+  defp resolve_page_size({:custom, w, h}) do
+    case {resolve_page_length(w), resolve_page_length(h)} do
+      {nil, _} -> resolve_page_size(nil)
+      {_, nil} -> resolve_page_size(nil)
+      {wv, hv} -> {wv, hv}
+    end
+  end
+
+  defp resolve_page_margin(nil), do: default_page_margin()
+
+  defp resolve_page_margin(%{top: t, right: r, bottom: b, left: l}) do
+    with tv when not is_nil(tv) <- resolve_page_length(t),
+         rv when not is_nil(rv) <- resolve_page_length(r),
+         bv when not is_nil(bv) <- resolve_page_length(b),
+         lv when not is_nil(lv) <- resolve_page_length(l) do
+      %{top: tv, right: rv, bottom: bv, left: lv}
+    else
+      nil -> default_page_margin()
+    end
+  end
+
+  defp default_page_margin do
+    mm20 = 20 * @mm_to_pt
+    %{top: mm20, right: mm20, bottom: mm20, left: mm20}
+  end
+
+  defp resolve_page_length({:length, _n, :percent}), do: nil
+  defp resolve_page_length({:length, _n, unit}) when unit in [:em, :rem], do: nil
+  defp resolve_page_length({:length, n, :mm}), do: n * @mm_to_pt
+  defp resolve_page_length({:length, n, :cm}), do: n * 72.0 / 2.54
+  defp resolve_page_length({:length, n, :in}), do: n * 72.0
+  defp resolve_page_length({:length, n, :pt}), do: n * 1.0
+  defp resolve_page_length({:length, n, :px}), do: n * 0.75
 end

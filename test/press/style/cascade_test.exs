@@ -1,7 +1,7 @@
 defmodule Press.Style.CascadeTest do
   use ExUnit.Case, async: true
 
-  alias Press.CSS.Rule
+  alias Press.CSS.{PageRule, Rule}
   alias Press.HTML
   alias Press.Style.{Cascade, Node, Text}
 
@@ -143,5 +143,44 @@ defmodule Press.Style.CascadeTest do
              Cascade.build(dom, rules, [])
 
     assert text_computed.color == {1.0, 0.0, 0.0}
+  end
+
+  describe "page_config/2" do
+    test "defaults to A4 with 20mm margins when no @page rules are given" do
+      config = Cascade.page_config([], [])
+
+      assert_in_delta elem(config.size, 0), 595.28, 0.1
+      assert_in_delta elem(config.size, 1), 841.89, 0.1
+      assert_in_delta config.margin.top, 56.69, 0.1
+      assert_in_delta config.margin.right, 56.69, 0.1
+    end
+
+    test "uses the last rule to set each of size/margin, across origins" do
+      external = [%PageRule{declarations: %{"size" => :letter}, source_index: 0}]
+
+      embedded_margin = %{
+        top: {:length, 10.0, :mm},
+        right: {:length, 10.0, :mm},
+        bottom: {:length, 10.0, :mm},
+        left: {:length, 10.0, :mm}
+      }
+
+      embedded = [%PageRule{declarations: %{"margin" => embedded_margin}, source_index: 0}]
+
+      config = Cascade.page_config(external, embedded)
+
+      assert config.size == {612.0, 792.0}
+      assert_in_delta config.margin.top, 28.35, 0.1
+    end
+
+    test "resolves a custom two-length size" do
+      custom = {:custom, {:length, 210.0, :mm}, {:length, 297.0, :mm}}
+      external = [%PageRule{declarations: %{"size" => custom}, source_index: 0}]
+
+      config = Cascade.page_config(external, [])
+
+      assert_in_delta elem(config.size, 0), 595.28, 0.1
+      assert_in_delta elem(config.size, 1), 841.89, 0.1
+    end
   end
 end

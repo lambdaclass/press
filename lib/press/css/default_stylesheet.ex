@@ -6,7 +6,7 @@ defmodule Press.CSS.DefaultStylesheet do
   @css """
   strong, b { font-weight: bold; }
   em, i { font-style: italic; }
-  th { font-weight: bold; text-align: center; }
+  th { font-weight: bold; text-align: left; }
   h1 { font-size: 24pt; margin: 0.67em 0; }
   h2 { font-size: 18pt; margin: 0.75em 0; }
   h3 { font-size: 14pt; margin: 0.83em 0; }
@@ -17,8 +17,9 @@ defmodule Press.CSS.DefaultStylesheet do
   ul, ol { list-style-position: outside; margin: 1em 0; }
   ul { list-style-type: disc; }
   ol { list-style-type: decimal; }
-  table.table-xs th, table.table-xs td { font-size: 9pt; }
-  table.table-sm th, table.table-sm td { font-size: 10.5pt; }
+  th, td { padding: 4pt 6pt; }
+  table.table-xs th, table.table-xs td { font-size: 9pt; padding: 2pt 4pt; }
+  table.table-sm th, table.table-sm td { font-size: 10.5pt; padding: 3pt 5pt; }
   """
 
   {parsed_page_rules, parsed_style_rules} = Parser.parse(@css)

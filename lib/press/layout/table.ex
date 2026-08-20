@@ -172,24 +172,44 @@ defmodule Press.Layout.Table do
     total_unspecified_weight = Enum.sum(unspecified_weights)
     remaining_table_width = max(0.0, table_width - total_explicit)
 
-    Enum.zip(explicit_widths, content_weights)
-    |> Enum.map(fn
-      {w, _} when not is_nil(w) ->
-        w
+    resolved_unspecified =
+      if total_unspecified_weight > 0 do
+        Enum.map(unspecified_weights, fn w ->
+          w / total_unspecified_weight * remaining_table_width
+        end)
+      else
+        count = max(1, length(unspecified_weights))
+        Enum.map(unspecified_weights, fn _ -> remaining_table_width / count end)
+      end
 
-      {nil, weight} ->
-        if total_unspecified_weight > 0 do
-          weight / total_unspecified_weight * remaining_table_width
-        else
-          remaining_table_width / max(1, length(unspecified_weights))
-        end
-    end)
+    {final_widths, _} =
+      Enum.reduce(explicit_widths, {[], resolved_unspecified}, fn
+        w, {acc, unspec} when not is_nil(w) ->
+          {[w | acc], unspec}
+
+        nil, {acc, [u | rest_u]} ->
+          {[u | acc], rest_u}
+      end)
+
+    Enum.reverse(final_widths)
   end
 
   defp estimate_cell_text_width(%Node{} = node) do
-    texts = collect_text_strings(node)
+    texts =
+      node
+      |> collect_text_strings()
+      |> Enum.map(&String.trim/1)
+      |> Enum.reject(&(&1 == ""))
+
     fs = (is_number(node.computed.font_size) && node.computed.font_size) || 12.0
-    font = node.computed.font_family || :helvetica
+
+    font =
+      case {node.computed.font_family, node.computed.font_weight} do
+        {:helvetica, :bold} -> :helvetica_bold
+        {:times, :bold} -> :times_bold
+        {:courier, :bold} -> :courier_bold
+        {f, _} -> f || :helvetica
+      end
 
     Enum.map(texts, fn t ->
       Press.Font.Metrics.text_width(font, t, fs)

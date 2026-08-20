@@ -52,6 +52,16 @@ defmodule Press.CSS.ValueTest do
     test "rejects a nonzero unitless number" do
       assert Value.parse_length("12") == :error
     end
+
+    test "parses calc() expressions" do
+      assert Value.parse_length("calc(0.25rem * 2)") == {:ok, {:length, 0.5, :rem}}
+      assert Value.parse_length("calc(2 * 0.25rem)") == {:ok, {:length, 0.5, :rem}}
+      assert Value.parse_length("calc(16px * 1.5)") == {:ok, {:length, 24.0, :px}}
+      assert Value.parse_length("calc(100% / 2)") == {:ok, {:length, 50.0, :percent}}
+      assert Value.parse_length("calc(var(--spacing) * 3)") == {:ok, {:length, 0.75, :rem}}
+      assert Value.parse_length("calc(10pt + 5pt)") == {:ok, {:length, 15.0, :pt}}
+      assert Value.parse_length("calc(20px - 5px)") == {:ok, {:length, 15.0, :px}}
+    end
   end
 
   describe "parse_line_height/1" do

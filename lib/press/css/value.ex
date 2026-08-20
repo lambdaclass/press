@@ -203,7 +203,84 @@ defmodule Press.CSS.Value do
       Regex.match?(@zero_regex, str) ->
         {:ok, {:length, 0, :pt}}
 
+      String.starts_with?(str, "calc(") ->
+        parse_calc_length(str)
+
       match = Regex.run(@length_regex, str) ->
+        [_, number, unit] = match
+        {:ok, {:length, parse_number(number), unit_atom(unit)}}
+
+      true ->
+        :error
+    end
+  end
+
+  def parse_calc_length(str) do
+    case Regex.run(~r/^calc\(\s*(.*?)\s*\)$/, str) do
+      [_, expr] ->
+        expr =
+          expr
+          |> String.replace("var(--spacing)", "0.25rem")
+
+        eval_length_expr(expr)
+
+      nil ->
+        :error
+    end
+  end
+
+  defp eval_length_expr(expr) do
+    expr = String.trim(expr)
+
+    cond do
+      # multiplication: number_unit * factor
+      match =
+          Regex.run(
+            ~r/^(-?\d+(?:\.\d+)?)(mm|cm|in|pt|px|em|rem|%)\s*\*\s*(-?\d+(?:\.\d+)?)$/,
+            expr
+          ) ->
+        [_, num_str, unit, factor_str] = match
+        {:ok, {:length, parse_number(num_str) * parse_number(factor_str), unit_atom(unit)}}
+
+      # multiplication: factor * number_unit
+      match =
+          Regex.run(
+            ~r/^(-?\d+(?:\.\d+)?)\s*\*\s*(-?\d+(?:\.\d+)?)(mm|cm|in|pt|px|em|rem|%)$/,
+            expr
+          ) ->
+        [_, factor_str, num_str, unit] = match
+        {:ok, {:length, parse_number(num_str) * parse_number(factor_str), unit_atom(unit)}}
+
+      # division: number_unit / divisor
+      match =
+          Regex.run(
+            ~r/^(-?\d+(?:\.\d+)?)(mm|cm|in|pt|px|em|rem|%)\s*\/\s*(-?\d+(?:\.\d+)?)$/,
+            expr
+          ) ->
+        [_, num_str, unit, divisor_str] = match
+        d = parse_number(divisor_str)
+        if d != 0, do: {:ok, {:length, parse_number(num_str) / d, unit_atom(unit)}}, else: :error
+
+      # addition: n1 unit + n2 unit
+      match =
+          Regex.run(
+            ~r/^(-?\d+(?:\.\d+)?)(mm|cm|in|pt|px|em|rem|%)\s*\+\s*(-?\d+(?:\.\d+)?)\2$/,
+            expr
+          ) ->
+        [_, n1_str, unit, n2_str] = match
+        {:ok, {:length, parse_number(n1_str) + parse_number(n2_str), unit_atom(unit)}}
+
+      # subtraction: n1 unit - n2 unit
+      match =
+          Regex.run(
+            ~r/^(-?\d+(?:\.\d+)?)(mm|cm|in|pt|px|em|rem|%)\s*-\s*(-?\d+(?:\.\d+)?)\2$/,
+            expr
+          ) ->
+        [_, n1_str, unit, n2_str] = match
+        {:ok, {:length, parse_number(n1_str) - parse_number(n2_str), unit_atom(unit)}}
+
+      # plain length inside calc
+      match = Regex.run(@length_regex, expr) ->
         [_, number, unit] = match
         {:ok, {:length, parse_number(number), unit_atom(unit)}}
 

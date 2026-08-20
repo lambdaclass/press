@@ -107,7 +107,78 @@ defmodule Press.CSS.Parser do
   defp strip_comments(css), do: Regex.replace(~r/\/\*.*?\*\//s, css, "")
 
   defp split_blocks(css) do
-    tokenize_blocks(css, [], "")
+    css
+    |> tokenize_blocks([], "")
+    |> Enum.flat_map(&flatten_block/1)
+  end
+
+  defp flatten_block({"", _body}), do: []
+
+  defp flatten_block({header, body}) do
+    if String.starts_with?(header, "@page") do
+      [{header, body}]
+    else
+      case tokenize_blocks(body, [], "") do
+        [] ->
+          [{header, body}]
+
+        nested_blocks ->
+          direct_body = extract_direct_body(body)
+          direct_entry = if direct_body != "", do: [{header, direct_body}], else: []
+
+          flattened_nested =
+            Enum.flat_map(nested_blocks, fn {child_header, child_body} ->
+              cond do
+                String.starts_with?(child_header, "@layer") or
+                  String.starts_with?(child_header, "@media") or
+                    String.starts_with?(child_header, "@supports") ->
+                  flatten_block({header, child_body})
+
+                true ->
+                  combined_header = combine_selectors(header, child_header)
+                  flatten_block({combined_header, child_body})
+              end
+            end)
+
+          direct_entry ++ flattened_nested
+      end
+    end
+  end
+
+  defp extract_direct_body(body) do
+    extract_outer_text(body, 0, <<>>)
+  end
+
+  defp extract_outer_text(<<>>, _depth, acc), do: String.trim(acc)
+
+  defp extract_outer_text(<<"{", rest::binary>>, depth, acc) do
+    extract_outer_text(rest, depth + 1, acc)
+  end
+
+  defp extract_outer_text(<<"}", rest::binary>>, depth, acc) do
+    extract_outer_text(rest, max(0, depth - 1), acc)
+  end
+
+  defp extract_outer_text(<<char, rest::binary>>, 0, acc) do
+    extract_outer_text(rest, 0, acc <> <<char>>)
+  end
+
+  defp extract_outer_text(<<_char, rest::binary>>, depth, acc) do
+    extract_outer_text(rest, depth, acc)
+  end
+
+  defp combine_selectors(parent, child) do
+    parent_list = split_balanced_commas(parent)
+    child_list = split_balanced_commas(child)
+
+    for p <- parent_list, c <- child_list do
+      if String.contains?(c, "&") do
+        String.replace(c, "&", p)
+      else
+        "#{p} #{c}"
+      end
+    end
+    |> Enum.join(", ")
   end
 
   defp tokenize_blocks(<<>>, acc, _header), do: Enum.reverse(acc)
@@ -168,26 +239,67 @@ defmodule Press.CSS.Parser do
 
   defp process_block({header, body}, {page_acc, style_acc, page_idx, style_idx}) do
     if String.starts_with?(header, "@page") do
-      rule = %PageRule{declarations: parse_page_declarations(body), source_index: page_idx}
-      {[rule | page_acc], style_acc, page_idx + 1, style_idx}
+      declarations = parse_page_declarations(body)
+
+      if map_size(declarations) == 0 do
+        {page_acc, style_acc, page_idx, style_idx}
+      else
+        rule = %PageRule{declarations: declarations, source_index: page_idx}
+        {[rule | page_acc], style_acc, page_idx + 1, style_idx}
+      end
     else
       declarations = parse_declarations(body)
 
-      new_rules =
-        header
-        |> split_balanced_commas()
-        |> Enum.map(&Selector.parse/1)
-        |> Enum.reject(&is_nil/1)
-        |> Enum.map(fn compounds ->
-          %Rule{
-            selector: compounds,
-            specificity: Selector.specificity(compounds),
-            declarations: declarations,
-            source_index: style_idx
-          }
-        end)
+      if map_size(declarations) == 0 do
+        {page_acc, style_acc, page_idx, style_idx}
+      else
+        new_rules =
+          header
+          |> split_balanced_commas()
+          |> Enum.flat_map(&expand_functional_pseudo_classes/1)
+          |> Enum.map(&Selector.parse/1)
+          |> Enum.reject(&is_nil/1)
+          |> Enum.map(fn compounds ->
+            %Rule{
+              selector: compounds,
+              specificity: Selector.specificity(compounds),
+              declarations: declarations,
+              source_index: style_idx
+            }
+          end)
 
-      {page_acc, Enum.reverse(new_rules) ++ style_acc, page_idx, style_idx + 1}
+        {page_acc, Enum.reverse(new_rules) ++ style_acc, page_idx, style_idx + 1}
+      end
+    end
+  end
+
+  defp expand_functional_pseudo_classes(selector) do
+    selector
+    |> clean_not_pseudo_class()
+    |> expand_where_or_is()
+  end
+
+  defp clean_not_pseudo_class(selector) do
+    Regex.replace(~r/:not\([^)]*\)/, selector, "") |> String.trim()
+  end
+
+  defp expand_where_or_is(selector) do
+    case Regex.run(~r/:(?:where|is)\(([^)]+)\)/, selector, return: :index) do
+      [{start_idx, len}, {inner_start, inner_len}] ->
+        prefix = binary_part(selector, 0, start_idx)
+        suffix = binary_part(selector, start_idx + len, byte_size(selector) - (start_idx + len))
+        inner = binary_part(selector, inner_start, inner_len)
+
+        inner_options = split_balanced_commas(inner)
+
+        for opt <- inner_options,
+            expanded <- expand_where_or_is("#{prefix}#{opt}#{suffix}") do
+          String.trim(expanded)
+        end
+        |> Enum.reject(&(&1 == ""))
+
+      nil ->
+        [selector]
     end
   end
 
@@ -342,29 +454,41 @@ defmodule Press.CSS.Parser do
     Shorthand.expand_box("border-style", value, fn v -> Value.parse_keyword(v, [:solid]) end)
   end
 
-  defp parse_declaration("padding-inline", value) do
-    with {:ok, v} <- Value.parse_length(value) do
-      {:ok, %{"padding-left" => v, "padding-right" => v}}
-    end
-  end
+  defp parse_declaration("padding-inline", value),
+    do: expand_logical_box("padding", "left", "right", value)
 
-  defp parse_declaration("padding-block", value) do
-    with {:ok, v} <- Value.parse_length(value) do
-      {:ok, %{"padding-top" => v, "padding-bottom" => v}}
-    end
-  end
+  defp parse_declaration("padding-block", value),
+    do: expand_logical_box("padding", "top", "bottom", value)
 
-  defp parse_declaration("margin-inline", value) do
-    with {:ok, v} <- Value.parse_length(value) do
-      {:ok, %{"margin-left" => v, "margin-right" => v}}
-    end
-  end
+  defp parse_declaration("margin-inline", value),
+    do: expand_logical_box("margin", "left", "right", value)
 
-  defp parse_declaration("margin-block", value) do
-    with {:ok, v} <- Value.parse_length(value) do
-      {:ok, %{"margin-top" => v, "margin-bottom" => v}}
-    end
-  end
+  defp parse_declaration("margin-block", value),
+    do: expand_logical_box("margin", "top", "bottom", value)
+
+  defp parse_declaration("padding-inline-start", value),
+    do: parse_single_side("padding-left", value)
+
+  defp parse_declaration("padding-inline-end", value),
+    do: parse_single_side("padding-right", value)
+
+  defp parse_declaration("padding-block-start", value),
+    do: parse_single_side("padding-top", value)
+
+  defp parse_declaration("padding-block-end", value),
+    do: parse_single_side("padding-bottom", value)
+
+  defp parse_declaration("margin-inline-start", value),
+    do: parse_single_side("margin-left", value)
+
+  defp parse_declaration("margin-inline-end", value),
+    do: parse_single_side("margin-right", value)
+
+  defp parse_declaration("margin-block-start", value),
+    do: parse_single_side("margin-top", value)
+
+  defp parse_declaration("margin-block-end", value),
+    do: parse_single_side("margin-bottom", value)
 
   defp parse_declaration("font-family", value) do
     alias_name =
@@ -460,4 +584,32 @@ defmodule Press.CSS.Parser do
   end
 
   defp parse_page_declaration(_property, _value), do: :error
+
+  defp expand_logical_box(prefix, side1, side2, value) do
+    parts = String.split(value)
+
+    case parts do
+      [single] ->
+        with {:ok, v} <- Value.parse_length(single) do
+          {:ok, %{"#{prefix}-#{side1}" => v, "#{prefix}-#{side2}" => v}}
+        end
+
+      [first, second] ->
+        with {:ok, v1} <- Value.parse_length(first),
+             {:ok, v2} <- Value.parse_length(second) do
+          {:ok, %{"#{prefix}-#{side1}" => v1, "#{prefix}-#{side2}" => v2}}
+        end
+
+      _ ->
+        with {:ok, v} <- Value.parse_length(value) do
+          {:ok, %{"#{prefix}-#{side1}" => v, "#{prefix}-#{side2}" => v}}
+        end
+    end
+  end
+
+  defp parse_single_side(property, value) do
+    with {:ok, v} <- Value.parse_length(value) do
+      {:ok, %{property => v}}
+    end
+  end
 end

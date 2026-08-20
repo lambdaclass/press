@@ -194,4 +194,64 @@ defmodule Press.CSS.ParserTest do
     assert rule.declarations["border-width-top"] == {:length, 1.0, :px}
     assert rule.declarations["border-width-left"] == {:length, 2.0, :px}
   end
+
+  test "expands :where() and :is() functional pseudo-classes" do
+    css = """
+    .table-xs :where(th, td) {
+      padding-inline: 8px;
+    }
+    """
+
+    {[], [r1, r2]} = Parser.parse(css)
+    assert r1.selector == [%{classes: ["table-xs"]}, %{type: "th"}]
+    assert r2.selector == [%{classes: ["table-xs"]}, %{type: "td"}]
+    assert r1.declarations["padding-left"] == {:length, 8.0, :px}
+    assert r2.declarations["padding-right"] == {:length, 8.0, :px}
+  end
+
+  test "flattens nested CSS rules and @layer blocks (daisyUI 5 / Tailwind v4 pattern)" do
+    css = """
+    .table-xs {
+      @layer daisyui.l1.l2 {
+        :where(th, td) {
+          padding-inline: calc(0.25rem * 2);
+          padding-block: calc(0.25rem * 1);
+        }
+      }
+    }
+    """
+
+    {[], [r1, r2]} = Parser.parse(css)
+    assert r1.selector == [%{classes: ["table-xs"]}, %{type: "th"}]
+    assert r2.selector == [%{classes: ["table-xs"]}, %{type: "td"}]
+    assert r1.declarations["padding-left"] == {:length, 0.5, :rem}
+    assert r1.declarations["padding-right"] == {:length, 0.5, :rem}
+    assert r1.declarations["padding-top"] == {:length, 0.25, :rem}
+    assert r1.declarations["padding-bottom"] == {:length, 0.25, :rem}
+  end
+
+  test "parses logical directional properties (start and end)" do
+    css = """
+    div {
+      padding-inline-start: 10px;
+      padding-inline-end: 20px;
+      padding-block-start: 5px;
+      padding-block-end: 15px;
+      margin-inline-start: 2px;
+      margin-inline-end: 4px;
+      margin-block-start: 6px;
+      margin-block-end: 8px;
+    }
+    """
+
+    {[], [rule]} = Parser.parse(css)
+    assert rule.declarations["padding-left"] == {:length, 10.0, :px}
+    assert rule.declarations["padding-right"] == {:length, 20.0, :px}
+    assert rule.declarations["padding-top"] == {:length, 5.0, :px}
+    assert rule.declarations["padding-bottom"] == {:length, 15.0, :px}
+    assert rule.declarations["margin-left"] == {:length, 2.0, :px}
+    assert rule.declarations["margin-right"] == {:length, 4.0, :px}
+    assert rule.declarations["margin-top"] == {:length, 6.0, :px}
+    assert rule.declarations["margin-bottom"] == {:length, 8.0, :px}
+  end
 end

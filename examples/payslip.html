@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Payslip July 2025</title>
+  <style>
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #333; }
+    .header { margin-bottom: 16pt; }
+    .logo { width: 180px; }
+    .company-info { font-size: 8pt; color: #666; }
+    h1 { font-size: 20pt; color: #7c3aed; margin: 8pt 0 4pt 0; }
+    table { width: 100%; border-collapse: collapse; }
+    .meta-table { margin-bottom: 14pt; }
+    .meta-table th { text-align: left; padding: 3pt 14pt 3pt 0; font-size: 9pt; color: #666; width: 140pt; }
+    .meta-table td { padding: 3pt 0; font-size: 9pt; }
+    .section-title { font-size: 11pt; font-weight: bold; color: #7c3aed; margin: 14pt 0 6pt 0; border-bottom: 2px solid #7c3aed; padding-bottom: 3pt; }
+    .details th { background-color: #7c3aed; color: #fff; padding: 5pt 10pt; text-align: left; font-size: 9pt; }
+    .details td { padding: 5pt 10pt; border-bottom: 1px solid #e5e7eb; font-size: 9pt; }
+    .details .num { text-align: right; }
+    .summary { margin-top: 14pt; }
+    .summary th { text-align: right; padding: 4pt 10pt; font-size: 9pt; background-color: #f5f3ff; }
+    .summary td { text-align: right; padding: 4pt 10pt; font-size: 9pt; background-color: #f5f3ff; }
+    .summary .net th, .summary .net td { background-color: #7c3aed; color: #fff; font-size: 12pt; font-weight: bold; }
+    .footer-note { margin-top: 24pt; font-size: 7pt; color: #999; text-align: center; padding-top: 8pt; border-top: 1px solid #d1d5db; }
+    .confidential { font-size: 7pt; color: #ef4444; text-transform: uppercase; letter-spacing: 1pt; margin-top: 8pt; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img class="logo" src="./assets/paycorp_logo.png" alt="PayCorp HR">
+    <p class="company-info">PayCorp HR Services Ltd — Company No. 08765432<br>
+    25 Canary Wharf, London E14 5AB, United Kingdom</p>
+    <h1>PAYSLIP</h1>
+  </div>
+
+  <div class="section-title">Employee Details</div>
+  <table class="meta-table">
+    <tr><th>Employee Name</th><td>Sarah M. Johnson</td></tr>
+    <tr><th>Employee ID</th><td>EMP-2024-0089</td></tr>
+    <tr><th>Department</th><td>Engineering</td></tr>
+    <tr><th>Position</th><td>Senior Software Developer</td></tr>
+    <tr><th>Pay Period</th><td>1 July 2025 – 31 July 2025</td></tr>
+    <tr><th>Payment Date</th><td>31 July 2025</td></tr>
+    <tr><th>Tax Code</th><td>1257L</td></tr>
+    <tr><th>NI Number</th><td>AB 12 34 56 C</td></tr>
+  </table>
+
+  <div class="section-title">Earnings</div>
+  <table class="details">
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th class="num">Hours / Units</th>
+        <th class="num">Rate</th>
+        <th class="num">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Basic Salary</td>
+        <td class="num">—</td>
+        <td class="num">—</td>
+        <td class="num">£4,583.33</td>
+      </tr>
+      <tr>
+        <td>Overtime (1.5x)</td>
+        <td class="num">8.0</td>
+        <td class="num">£39.66</td>
+        <td class="num">£317.28</td>
+      </tr>
+      <tr>
+        <td>On-Call Allowance</td>
+        <td class="num">5 days</td>
+        <td class="num">£30.00</td>
+        <td class="num">£150.00</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <th colspan="3" style="text-align: right; padding: 5pt 10pt; background-color: #f5f3ff;">Gross Pay</th>
+        <td class="num" style="font-weight: bold; background-color: #f5f3ff;">£5,050.61</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="section-title">Deductions</div>
+  <table class="details">
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th class="num">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Income Tax (PAYE)</td>
+        <td class="num">£756.12</td>
+      </tr>
+      <tr>
+        <td>National Insurance</td>
+        <td class="num">£404.05</td>
+      </tr>
+      <tr>
+        <td>Pension Contribution (5%)</td>
+        <td class="num">£252.53</td>
+      </tr>
+      <tr>
+        <td>Student Loan (Plan 2)</td>
+        <td class="num">£128.05</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <th style="text-align: right; padding: 5pt 10pt; background-color: #f5f3ff;">Total Deductions</th>
+        <td class="num" style="font-weight: bold; background-color: #f5f3ff;">£1,540.75</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <table class="summary">
+    <tr class="net">
+      <th>Net Pay</th>
+      <td>£3,509.86</td>
+    </tr>
+  </table>
+
+  <div class="confidential">Confidential — For addressee only</div>
+
+  <div class="footer-note">
+    PayCorp HR Services Ltd — 25 Canary Wharf, London E14 5AB — Company No. 08765432<br>
+    This payslip is computer-generated and does not require a signature.
+  </div>
+</body>
+</html>

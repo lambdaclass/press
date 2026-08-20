@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Delivery Note DN-2025-0312</title>
+  <style>
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #333; }
+    .header { margin-bottom: 16pt; }
+    .logo { width: 180px; }
+    .company-info { font-size: 8pt; color: #666; }
+    h1 { font-size: 20pt; color: #16a34a; margin: 8pt 0 4pt 0; }
+    table { width: 100%; border-collapse: collapse; }
+    .meta-table { width: auto; margin-bottom: 14pt; }
+    .meta-table th { text-align: left; padding: 3pt 14pt 3pt 0; font-size: 9pt; color: #666; }
+    .meta-table td { padding: 3pt 0; font-size: 9pt; }
+    .parties { margin-bottom: 14pt; }
+    .party { display: inline-block; width: 48%; vertical-align: top; }
+    .party-label { font-size: 8pt; text-transform: uppercase; color: #999; letter-spacing: 0.5pt; margin-bottom: 3pt; }
+    .party-name { font-weight: bold; }
+    .items th { background-color: #16a34a; color: #fff; padding: 5pt 10pt; text-align: left; font-size: 9pt; }
+    .items td { padding: 5pt 10pt; border-bottom: 1px solid #e5e7eb; font-size: 9pt; }
+    .items .num { text-align: right; }
+    .items .code { color: #6b7280; font-size: 8pt; }
+    .signature-area { margin-top: 30pt; }
+    .sig-block { display: inline-block; width: 45%; text-align: center; }
+    .sig-line { border-top: 1px solid #333; margin-top: 50pt; padding-top: 4pt; font-size: 8pt; color: #666; }
+    .notes { margin-top: 16pt; font-size: 8pt; color: #666; padding: 8pt; background-color: #f0fdf4; border-left: 3pt solid #16a34a; }
+    .footer { margin-top: 24pt; padding-top: 6pt; border-top: 1px solid #d1d5db; font-size: 7pt; color: #999; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img class="logo" src="./assets/freshgoods_logo.png" alt="FreshGoods Ltd">
+    <p class="company-info">FreshGoods Ltd — VAT IE9876543W<br>
+    Unit 7, Harbour Business Park, Cork, Ireland</p>
+    <h1>DELIVERY NOTE</h1>
+  </div>
+
+  <table class="meta-table">
+    <tr><th>Reference</th><td>DN-2025-0312</td></tr>
+    <tr><th>Date</th><td>2025-06-20</td></tr>
+    <tr><th>Order Ref</th><td>PO-2025-0845</td></tr>
+    <tr><th>Carrier</th><td>FastFreight Logistics</td></tr>
+  </table>
+
+  <div class="parties">
+    <div class="party">
+      <div class="party-label">From (Sender)</div>
+      <div class="party-name">FreshGoods Ltd</div>
+      <div>Unit 7, Harbour Business Park</div>
+      <div>Cork T12 AB34, Ireland</div>
+      <div>Tel: +353 21 123 4567</div>
+    </div>
+    <div class="party">
+      <div class="party-label">To (Recipient)</div>
+      <div class="party-name">GreenMarket GmbH</div>
+      <div>Friedrichstraße 89</div>
+      <div>10117 Berlin, Germany</div>
+      <div>Tel: +49 30 9876 5432</div>
+    </div>
+  </div>
+
+  <table class="items">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Product</th>
+        <th>SKU</th>
+        <th class="num">Qty</th>
+        <th class="num">Weight (kg)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>Organic Extra Virgin Olive Oil (750ml)</td>
+        <td class="code">FG-OIL-750</td>
+        <td class="num">48</td>
+        <td class="num">43.2</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Wild Flower Honey (500g)</td>
+        <td class="code">FG-HON-500</td>
+        <td class="num">120</td>
+        <td class="num">72.0</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Artisan Sourdough Crackers (200g)</td>
+        <td class="code">FG-CRK-200</td>
+        <td class="num">200</td>
+        <td class="num">44.0</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>Smoked Paprika Seasoning (100g)</td>
+        <td class="code">FG-SPK-100</td>
+        <td class="num">80</td>
+        <td class="num">9.6</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>Dried Mixed Herbs Pack (50g)</td>
+        <td class="code">FG-HRB-050</td>
+        <td class="num">150</td>
+        <td class="num">9.0</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <th colspan="3" style="text-align: right; padding: 5pt 10pt; background-color: #f0fdf4;">Total</th>
+        <td class="num" style="font-weight: bold; background-color: #f0fdf4;">598</td>
+        <td class="num" style="font-weight: bold; background-color: #f0fdf4;">177.8</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="notes">
+    <strong>Handling notes:</strong> Items 1-2 are fragile — handle with care.
+    Store below 25°C. Deliver between 08:00 and 14:00.
+  </div>
+
+  <div class="signature-area">
+    <div class="sig-block">
+      <div class="sig-line">Dispatched by (Sender)</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line">Received by (Recipient)</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    FreshGoods Ltd — Unit 7, Harbour Business Park, Cork T12 AB34, Ireland — VAT IE9876543W — orders@freshgoods.example.com
+  </div>
+</body>
+</html>

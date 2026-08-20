@@ -1,31 +1,89 @@
 # Press
 
 Press is a dependency-free Elixir library for rendering HTML+CSS into PDF,
-targeting structured business documents: invoices, delivery notes, reports.
-"Dependency-free" means zero runtime dependencies — only modules that ship
-with OTP itself (e.g. `:zlib`) are used.
+targeting structured business documents: invoices, delivery notes, payslips,
+and reports. "Dependency-free" means zero runtime dependencies — only modules
+that ship with OTP itself (e.g. `:zlib`) are used.
 
-See `docs/superpowers/specs/2026-07-20-html-css-to-pdf-design.md` for the
-full design (HTML/CSS subset, architecture, roadmap) and `TODO.md` for
-features deferred to later phases.
+## Usage
 
-## Status
+```elixir
+html = """
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Helvetica, sans-serif; font-size: 12pt; }
+    h1 { color: #1a56db; }
+  </style>
+</head>
+<body>
+  <h1>Hello from Press!</h1>
+  <p>Render HTML and CSS directly to PDF with zero dependencies.</p>
+</body>
+</html>
+"""
 
-Under active development, phase by phase:
+{:ok, pdf_binary} = Press.render(html)
+File.write!("document.pdf", pdf_binary)
+```
 
-- ✅ **Phase 1 — PDF writer core**: place text with the 14 standard PDF
-  fonts and draw filled/stroked rectangles, producing a valid PDF binary.
-  See the example below.
-- ✅ **Phase 2 — HTML parser**: a lenient, never-fails HTML-to-DOM parser
-  (`Press.HTML.Parser.parse/1`). Not wired into a PDF pipeline yet — that
-  happens once CSS cascade and layout (next phases) exist.
-- ⏳ **Phase 3 onward** (CSS cascade, layout, pagination, images, the
-  public `Press.render/2` HTML+CSS API): not implemented yet.
+Images (PNG and JPEG) can be referenced via data URIs or passed in an `:images` lookup map:
+
+```elixir
+logo_data = File.read!("logo.png")
+
+{:ok, pdf_binary} = Press.render(html, images: %{"./assets/logo.png" => logo_data})
+File.write!("invoice.pdf", pdf_binary)
+```
+
+## Examples
+
+### Invoice
+
+[examples/invoice.exs](examples/invoice.exs) renders a business invoice ([examples/invoice.html](examples/invoice.html)) with company branding, itemized table, tax breakdown, and payment details (`mix run examples/invoice.exs`):
+
+```elixir
+html = File.read!("examples/invoice.html")
+logo = File.read!("examples/assets/novatech_logo.png")
+
+{:ok, pdf} = Press.render(html, images: %{"./assets/novatech_logo.png" => logo})
+File.write!("examples/invoice.pdf", pdf)
+```
+
+![Invoice example](examples/invoice.png)
+
+### Delivery Note (Albarán)
+
+[examples/delivery_note.exs](examples/delivery_note.exs) renders a goods delivery note ([examples/delivery_note.html](examples/delivery_note.html)) with sender/recipient blocks, SKU table, weight summary, and signature areas (`mix run examples/delivery_note.exs`):
+
+```elixir
+html = File.read!("examples/delivery_note.html")
+logo = File.read!("examples/assets/freshgoods_logo.png")
+
+{:ok, pdf} = Press.render(html, images: %{"./assets/freshgoods_logo.png" => logo})
+File.write!("examples/delivery_note.pdf", pdf)
+```
+
+![Delivery Note example](examples/delivery_note.png)
+
+### Payslip (Nómina)
+
+[examples/payslip.exs](examples/payslip.exs) renders an employee payslip ([examples/payslip.html](examples/payslip.html)) with earnings, tax deductions, and net pay summary (`mix run examples/payslip.exs`):
+
+```elixir
+html = File.read!("examples/payslip.html")
+logo = File.read!("examples/assets/paycorp_logo.png")
+
+{:ok, pdf} = Press.render(html, images: %{"./assets/paycorp_logo.png" => logo})
+File.write!("examples/payslip.pdf", pdf)
+```
+
+![Payslip example](examples/payslip.png)
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `press` to your list of dependencies in `mix.exs`:
+The package can be installed by adding `press` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
@@ -38,43 +96,6 @@ end
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/press>.
-
-## Example
-
-The high-level `Press.render/2` (HTML+CSS string → PDF) described in the
-design spec doesn't exist yet. What's available today is the low-level PDF
-writer built in Phase 1:
-
-```elixir
-doc = Press.PDF.Document.new()
-{doc, page} = Press.PDF.Document.add_page(doc, 595.0, 842.0)
-
-doc =
-  doc
-  |> Press.PDF.Document.draw_rect(page, 50.0, 700.0, 200.0, 80.0,
-    fill: {0.9, 0.9, 0.9},
-    stroke: {0, 0, 0},
-    stroke_width: 1.0
-  )
-  |> Press.PDF.Document.draw_text(page, 60.0, 750.0, "Hello world!",
-    font: :helvetica_bold,
-    size: 24
-  )
-
-pdf_binary = Press.PDF.Writer.to_binary(doc)
-File.write!("hello.pdf", pdf_binary)
-```
-
-This writes a one-page A4 PDF with a light-gray bordered box and bold
-"Hello world!" text inside it.
-
-Phase 2 adds a lenient HTML parser (not yet wired into the PDF
-pipeline above — that happens once CSS cascade and layout exist):
-
-```elixir
-iex> Press.HTML.Parser.parse("<h1>Hello world!</h1>")
-[%Press.HTML.Element{tag: "h1", attrs: %{}, children: [%Press.HTML.Text{content: "Hello world!"}]}]
-```
 
 ## License
 

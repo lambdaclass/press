@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Invoice INV-2025-0147</title>
+  <style>
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #333; }
+    .header { margin-bottom: 20pt; }
+    .logo { width: 180px; }
+    .company-info { font-size: 8pt; color: #666; }
+    h1 { font-size: 22pt; color: #1a56db; margin: 10pt 0 4pt 0; }
+    table { width: 100%; border-collapse: collapse; }
+    .meta-table { width: auto; margin-bottom: 16pt; }
+    .meta-table th { text-align: left; padding: 4pt 12pt 4pt 0; font-size: 9pt; color: #666; }
+    .meta-table td { padding: 4pt 0; font-size: 9pt; }
+    .addresses { margin-bottom: 16pt; }
+    .addr-block { display: inline-block; width: 48%; vertical-align: top; }
+    .addr-label { font-size: 8pt; text-transform: uppercase; color: #999; margin-bottom: 4pt; }
+    .addr-name { font-weight: bold; }
+    .items th { background-color: #1a56db; color: #fff; padding: 6pt 10pt; text-align: left; font-size: 9pt; }
+    .items td { padding: 6pt 10pt; border-bottom: 1px solid #e5e7eb; font-size: 9pt; }
+    .items .num { text-align: right; }
+    .totals th { text-align: right; padding: 6pt 10pt; font-size: 9pt; background-color: #f3f4f6; }
+    .totals td { text-align: right; padding: 6pt 10pt; font-size: 9pt; background-color: #f3f4f6; }
+    .grand-total th, .grand-total td { background-color: #1a56db; color: #fff; font-size: 11pt; }
+    .notes { margin-top: 20pt; font-size: 8pt; color: #666; padding: 8pt; background-color: #f9fafb; }
+    .notes-title { font-weight: bold; font-size: 9pt; color: #333; margin-bottom: 4pt; }
+    .footer { margin-top: 30pt; padding-top: 8pt; border-top: 1px solid #d1d5db; font-size: 7pt; color: #999; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img class="logo" src="./assets/novatech_logo.png" alt="NovaTech Solutions">
+    <p class="company-info">NovaTech Solutions S.L. — CIF B12345678<br>
+    Calle Innovación 42, 28013 Madrid, Spain</p>
+    <h1>INVOICE</h1>
+  </div>
+
+  <table class="meta-table">
+    <tr><th>Invoice Number</th><td>INV-2025-0147</td></tr>
+    <tr><th>Invoice Date</th><td>2025-03-15</td></tr>
+    <tr><th>Due Date</th><td>2025-04-15</td></tr>
+    <tr><th>Status</th><td>Unpaid</td></tr>
+  </table>
+
+  <div class="addresses">
+    <div class="addr-block">
+      <div class="addr-label">Bill To</div>
+      <div class="addr-name">CloudWave Technologies B.V.</div>
+      <div>Keizersgracht 120</div>
+      <div>1015 CW Amsterdam, Netherlands</div>
+      <div>NL809876543B01</div>
+    </div>
+    <div class="addr-block">
+      <div class="addr-label">Ship To</div>
+      <div class="addr-name">CloudWave Technologies B.V.</div>
+      <div>Same as billing address</div>
+    </div>
+  </div>
+
+  <table class="items">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Description</th>
+        <th class="num">Qty</th>
+        <th class="num">Unit Price</th>
+        <th class="num">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>Platform License — Enterprise (annual)</td>
+        <td class="num">1</td>
+        <td class="num">4,800.00 €</td>
+        <td class="num">4,800.00 €</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Custom Integration Module</td>
+        <td class="num">3</td>
+        <td class="num">1,200.00 €</td>
+        <td class="num">3,600.00 €</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Technical Support — Premium (12 months)</td>
+        <td class="num">1</td>
+        <td class="num">2,400.00 €</td>
+        <td class="num">2,400.00 €</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr class="totals">
+        <th colspan="4">Subtotal</th>
+        <td>10,800.00 €</td>
+      </tr>
+      <tr class="totals">
+        <th colspan="4">VAT (21%)</th>
+        <td>2,268.00 €</td>
+      </tr>
+      <tr class="totals grand-total">
+        <th colspan="4">Total</th>
+        <td>13,068.00 €</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="notes">
+    <div class="notes-title">Payment Information</div>
+    <p>Please transfer the total amount to:<br>
+    IBAN: ES91 2100 0418 4502 0005 1332<br>
+    BIC/SWIFT: CAIXESBBXXX<br>
+    Reference: INV-2025-0147</p>
+  </div>
+
+  <div class="footer">
+    NovaTech Solutions S.L. — Calle Innovación 42, 28013 Madrid, Spain — CIF B12345678 — info@novatech.example.com
+  </div>
+</body>
+</html>

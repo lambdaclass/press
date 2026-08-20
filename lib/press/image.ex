@@ -3,9 +3,13 @@ defmodule Press.Image do
   Represents an image decoded and prepared for PDF embedding.
   """
 
+  @typedoc "Supported image formats."
   @type format :: :jpeg | :png
+
+  @typedoc "Color space of the image data."
   @type color_space :: :rgb | :gray
 
+  @typedoc "An image decoded and prepared for PDF embedding."
   @type t :: %__MODULE__{
           id: String.t() | nil,
           format: format(),

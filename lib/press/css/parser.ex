@@ -90,6 +90,9 @@ defmodule Press.CSS.Parser do
     "consolas" => :courier
   }
 
+  @doc """
+  Parses a raw CSS string into a tuple of `{page_rules, style_rules}`.
+  """
   @spec parse(String.t()) :: {[PageRule.t()], [Rule.t()]}
   def parse(css) when is_binary(css) do
     {page_acc, style_acc, _page_idx, _style_idx} =

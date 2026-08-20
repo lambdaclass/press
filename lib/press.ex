@@ -60,6 +60,27 @@ defmodule Press do
     {:ok, pdf_bytes}
   end
 
+  @doc """
+  Renders an HTML string into a PDF binary, raising on error.
+
+  Same as `render/2`, but returns the PDF binary directly or raises a `RuntimeError`
+  if rendering fails.
+
+  ## Examples
+
+      iex> pdf = Press.render!("<h1>Invoice #123</h1>")
+      iex> is_binary(pdf)
+      true
+
+  """
+  @spec render!(String.t(), keyword()) :: binary()
+  def render!(html, opts \\ []) when is_binary(html) and is_list(opts) do
+    case render(html, opts) do
+      {:ok, pdf_bytes} -> pdf_bytes
+      {:error, reason} -> raise "failed to render PDF: #{inspect(reason)}"
+    end
+  end
+
   defp extract_style_content(nodes) do
     nodes
     |> find_all_tag("style")

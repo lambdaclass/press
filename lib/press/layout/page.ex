@@ -3,6 +3,7 @@ defmodule Press.Layout.Page do
   A paginated page containing dimensions, margins, and positioned layout boxes.
   """
 
+  @typedoc "A paginated page struct with dimensions and layout boxes."
   @type t :: %__MODULE__{
           number: pos_integer(),
           width: float(),

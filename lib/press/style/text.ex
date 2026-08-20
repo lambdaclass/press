@@ -8,6 +8,7 @@ defmodule Press.Style.Text do
   for Layout to render it correctly.
   """
 
+  @typedoc "A styled text node struct with computed inherited properties."
   @type t :: %__MODULE__{content: String.t(), computed: map()}
 
   defstruct content: "", computed: %{}

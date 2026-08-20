@@ -1,15 +1,19 @@
 defmodule Press.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+  @source_url "https://github.com/altenwald/press"
+
   def project do
     [
       app: :press,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: "A dependency-free Elixir library for rendering HTML+CSS into PDF",
-      package: package()
+      package: package(),
+      docs: docs()
     ]
   end
 
@@ -20,17 +24,27 @@ defmodule Press.MixProject do
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
-  defp deps do
+  defp package do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      files: ~w(lib mix.exs README* LICENSE* .formatter.exs),
+      licenses: ["MIT"],
+      links: %{"GitHub" => @source_url}
     ]
   end
 
-  defp package do
+  defp docs do
     [
-      licenses: ["MIT"]
+      main: "readme",
+      source_ref: "v#{@version}",
+      source_url: @source_url,
+      extras: ["README.md", "LICENSE"]
+    ]
+  end
+
+  # Run "mix help deps" to learn about dependencies.
+  defp deps do
+    [
+      {:ex_doc, "~> 0.40", only: :dev, runtime: false}
     ]
   end
 end

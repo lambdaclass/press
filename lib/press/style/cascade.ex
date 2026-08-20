@@ -39,6 +39,9 @@ defmodule Press.Style.Cascade do
     {:list_style_position, "list-style-position"}
   ]
 
+  @doc """
+  Builds a styled node tree by applying the CSS cascade to the DOM.
+  """
   @spec build([HTML.Element.t() | HTML.Text.t()], [Press.CSS.Rule.t()], [Press.CSS.Rule.t()]) ::
           [Node.t() | Text.t()]
   def build(dom, external_rules, embedded_rules) do
@@ -225,6 +228,9 @@ defmodule Press.Style.Cascade do
 
   @mm_to_pt 72.0 / 25.4
 
+  @doc """
+  Resolves the final page configuration (`size` and `margin`) from `@page` rules.
+  """
   @spec page_config([Press.CSS.PageRule.t()], [Press.CSS.PageRule.t()]) :: %{
           size: {float(), float()},
           margin: %{top: float(), right: float(), bottom: float(), left: float()}

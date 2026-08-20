@@ -3,8 +3,10 @@ defmodule Press.Layout.Box do
   A positioned geometric box in the layout tree.
   """
 
+  @typedoc "The structural category of a layout box."
   @type box_type :: :block | :line | :text | :table | :table_row | :table_cell | :image
 
+  @typedoc "A positioned geometric box struct."
   @type t :: %__MODULE__{
           type: box_type(),
           tag: String.t() | nil,
@@ -52,6 +54,7 @@ defmodule Press.Layout.Box do
   @doc """
   Computes total outer width including content width, padding, border, and margin.
   """
+  @spec outer_width(t()) :: float()
   def outer_width(%__MODULE__{} = box) do
     (box.width || 0.0) + box.padding.left + box.padding.right +
       box.border_width.left + box.border_width.right +
@@ -61,6 +64,7 @@ defmodule Press.Layout.Box do
   @doc """
   Computes total outer height including content height, padding, border, and margin.
   """
+  @spec outer_height(t()) :: float()
   def outer_height(%__MODULE__{} = box) do
     (box.height || 0.0) + box.padding.top + box.padding.bottom +
       box.border_width.top + box.border_width.bottom +
@@ -70,6 +74,7 @@ defmodule Press.Layout.Box do
   @doc """
   Computes border-box width (content width + padding + border).
   """
+  @spec border_box_width(t()) :: float()
   def border_box_width(%__MODULE__{} = box) do
     (box.width || 0.0) + box.padding.left + box.padding.right +
       box.border_width.left + box.border_width.right
@@ -78,6 +83,7 @@ defmodule Press.Layout.Box do
   @doc """
   Computes border-box height (content height + padding + border).
   """
+  @spec border_box_height(t()) :: float()
   def border_box_height(%__MODULE__{} = box) do
     (box.height || 0.0) + box.padding.top + box.padding.bottom +
       box.border_width.top + box.border_width.bottom

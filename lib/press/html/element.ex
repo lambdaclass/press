@@ -9,6 +9,7 @@ defmodule Press.HTML.Element do
   and `Press.HTML.Text`.
   """
 
+  @typedoc "An HTML element node struct."
   @type t :: %__MODULE__{
           tag: String.t(),
           attrs: %{String.t() => String.t()},

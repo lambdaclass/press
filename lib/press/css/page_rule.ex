@@ -10,6 +10,7 @@ defmodule Press.CSS.PageRule do
   see the design spec's "@page parsing" section for why.
   """
 
+  @typedoc "A parsed `@page` rule struct."
   @type t :: %__MODULE__{declarations: %{String.t() => term()}, source_index: non_neg_integer()}
 
   defstruct declarations: %{}, source_index: 0

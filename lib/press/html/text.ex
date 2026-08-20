@@ -6,6 +6,7 @@ defmodule Press.HTML.Text do
   moduledoc for the supported entity set).
   """
 
+  @typedoc "An HTML text node struct."
   @type t :: %__MODULE__{content: String.t()}
 
   defstruct content: ""

@@ -4,7 +4,7 @@ defmodule Press.CSS.Rule do
   `Press.CSS.Parser.parse/1`.
 
   `selector` is a list of compound-selector maps in left-to-right
-  (outermost-to-innermost) order — see `Press.CSS.Selector` for the
+  (outermost-to-innermost) order — see the internal selector parser for the
   shape and matching logic. `declarations` maps CSS property name to an
   already-parsed, typed value — box shorthands (`margin`, `padding`,
   `border-*`) are already expanded into longhand keys here, never left
@@ -14,6 +14,7 @@ defmodule Press.CSS.Rule do
   specificity from the same stylesheet source.
   """
 
+  @typedoc "A parsed CSS style rule struct."
   @type t :: %__MODULE__{
           selector: [map()],
           specificity: {non_neg_integer(), non_neg_integer(), non_neg_integer()},

@@ -10,6 +10,7 @@ defmodule Press.Style.Node do
   have. See the design spec for the full computed-property list.
   """
 
+  @typedoc "A styled DOM element node struct with computed CSS properties."
   @type t :: %__MODULE__{
           element: Press.HTML.Element.t(),
           computed: map(),

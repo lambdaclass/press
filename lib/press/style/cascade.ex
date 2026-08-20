@@ -150,6 +150,22 @@ defmodule Press.Style.Cascade do
         :height,
         resolve_dimension(Map.get(specified, "height"), font_size, context.root_font_size)
       )
+      |> Map.put(
+        :min_height,
+        resolve_dimension(Map.get(specified, "min-height"), font_size, context.root_font_size)
+      )
+      |> Map.put(
+        :min_width,
+        resolve_dimension(Map.get(specified, "min-width"), font_size, context.root_font_size)
+      )
+      |> Map.put(
+        :max_height,
+        resolve_dimension(Map.get(specified, "max-height"), font_size, context.root_font_size)
+      )
+      |> Map.put(
+        :max_width,
+        resolve_dimension(Map.get(specified, "max-width"), font_size, context.root_font_size)
+      )
       |> Map.put(:background_color, Map.get(specified, "background-color"))
 
     inherited_keys = Enum.map(@keyword_inheritable, fn {key, _prop} -> key end)

@@ -25,7 +25,7 @@ defmodule Press.CSS.Parser do
   }
 
   @color_properties ~w(color background-color)
-  @length_properties ~w(font-size width height border-spacing)
+  @length_properties ~w(font-size width height min-width min-height max-width max-height border-spacing)
 
   @keyword_properties %{
     "font-weight" => [:normal, :bold],

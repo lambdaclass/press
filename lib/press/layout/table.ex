@@ -260,8 +260,9 @@ defmodule Press.Layout.Table do
       |> Enum.max(fn -> 0.0 end)
 
     specified_row_height =
-      case row_node.computed.height do
-        n when is_number(n) -> n * 1.0
+      case {Map.get(row_node.computed, :height), Map.get(row_node.computed, :min_height)} do
+        {n, _} when is_number(n) -> n * 1.0
+        {_, n} when is_number(n) -> n * 1.0
         _ -> 0.0
       end
 

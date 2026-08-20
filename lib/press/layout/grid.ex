@@ -224,6 +224,9 @@ defmodule Press.Layout.Grid do
   defp node_explicit_height(%Node{computed: %{height: n}}) when is_number(n) and n > 0.0,
     do: n * 1.0
 
+  defp node_explicit_height(%Node{computed: %{min_height: n}}) when is_number(n) and n > 0.0,
+    do: n * 1.0
+
   defp node_explicit_height(%Node{children: children}) do
     Enum.find_value(children, nil, &node_explicit_height/1)
   end

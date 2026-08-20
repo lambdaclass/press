@@ -33,6 +33,12 @@ defmodule Press.PDF.Document do
     end)
   end
 
+  def draw_image(%__MODULE__{} = doc, page_index, x, y, w, h, image) do
+    update_page(doc, page_index, fn page ->
+      %{page | ops: page.ops ++ [{:image, x, y, w, h, image}]}
+    end)
+  end
+
   defp update_page(%__MODULE__{pages: pages} = doc, index, fun) do
     if index < 0 or index >= length(pages) do
       raise ArgumentError, "no page at index #{index} (document has #{length(pages)} page(s))"

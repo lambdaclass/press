@@ -3,11 +3,11 @@ defmodule Press.PDF.ContentStream do
 
   alias Press.PDF.Syntax
 
-  def render(ops, font_resource_names) do
-    Enum.map_join(ops, "\n", &render_op(&1, font_resource_names))
+  def render(ops, font_resource_names, image_resource_names \\ %{}) do
+    Enum.map_join(ops, "\n", &render_op(&1, font_resource_names, image_resource_names))
   end
 
-  defp render_op({:text, x, y, font, size, {r, g, b}, text}, font_resource_names) do
+  defp render_op({:text, x, y, font, size, {r, g, b}, text}, font_resource_names, _image_resource_names) do
     resource = Map.fetch!(font_resource_names, font)
 
     Enum.join(
@@ -25,7 +25,7 @@ defmodule Press.PDF.ContentStream do
     )
   end
 
-  defp render_op({:rect, x, y, w, h, fill, stroke, stroke_width}, _font_resource_names) do
+  defp render_op({:rect, x, y, w, h, fill, stroke, stroke_width}, _font_resource_names, _image_resource_names) do
     ["q"]
     |> add_fill_color(fill)
     |> add_stroke_color(stroke, stroke_width)
@@ -35,6 +35,20 @@ defmodule Press.PDF.ContentStream do
       "Q"
     ])
     |> Enum.join("\n")
+  end
+
+  defp render_op({:image, x, y, w, h, %{id: id}}, _font_resource_names, image_resource_names) do
+    resource = Map.fetch!(image_resource_names, id)
+
+    Enum.join(
+      [
+        "q",
+        "#{Syntax.number(w)} 0 0 #{Syntax.number(h)} #{Syntax.number(x)} #{Syntax.number(y)} cm",
+        "#{resource} Do",
+        "Q"
+      ],
+      "\n"
+    )
   end
 
   defp add_fill_color(lines, nil), do: lines

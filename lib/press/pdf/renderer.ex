@@ -25,6 +25,7 @@ defmodule Press.PDF.Renderer do
     |> render_background(box, page_index, page_height)
     |> render_borders(box, page_index, page_height)
     |> render_text(box, page_index, page_height)
+    |> render_image(box, page_index, page_height)
     |> render_children(box.children, page_index, page_height)
   end
 
@@ -128,4 +129,17 @@ defmodule Press.PDF.Renderer do
   end
 
   defp render_text(doc, _box, _page_idx, _h), do: doc
+
+  defp render_image(
+         doc,
+         %Box{type: :image, image: %Press.Image{} = img} = box,
+         page_idx,
+         page_height
+       ) do
+    pdf_x = box.x
+    pdf_y = page_height - (box.y + box.height)
+    Document.draw_image(doc, page_idx, pdf_x, pdf_y, box.width, box.height, img)
+  end
+
+  defp render_image(doc, _box, _page_idx, _h), do: doc
 end

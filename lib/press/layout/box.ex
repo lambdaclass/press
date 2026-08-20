@@ -3,7 +3,7 @@ defmodule Press.Layout.Box do
   A positioned geometric box in the layout tree.
   """
 
-  @type box_type :: :block | :line | :text | :table | :table_row | :table_cell
+  @type box_type :: :block | :line | :text | :table | :table_row | :table_cell | :image
 
   @type t :: %__MODULE__{
           type: box_type(),
@@ -16,6 +16,7 @@ defmodule Press.Layout.Box do
           font: atom() | nil,
           font_size: float() | nil,
           color: term(),
+          image: Press.Image.t() | nil,
           margin: %{top: float(), right: float(), bottom: float(), left: float()},
           padding: %{top: float(), right: float(), bottom: float(), left: float()},
           border_width: %{top: float(), right: float(), bottom: float(), left: float()},
@@ -37,6 +38,7 @@ defmodule Press.Layout.Box do
     :font,
     :font_size,
     :color,
+    :image,
     margin: %{top: 0.0, right: 0.0, bottom: 0.0, left: 0.0},
     padding: %{top: 0.0, right: 0.0, bottom: 0.0, left: 0.0},
     border_width: %{top: 0.0, right: 0.0, bottom: 0.0, left: 0.0},

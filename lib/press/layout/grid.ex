@@ -259,12 +259,19 @@ defmodule Press.Layout.Grid do
         |> Enum.with_index()
         |> Enum.map(fn {row, idx} ->
           new_row_y = tbl_box.y + idx * target_row_h
-          y_offset = (target_row_h - row.height) / 2.0
 
           stretched_cells =
             Enum.map(row.children, fn cell ->
+              target_content_h =
+                max(
+                  0.0,
+                  target_row_h - cell.padding.top - cell.padding.bottom - cell.border_width.top -
+                    cell.border_width.bottom
+                )
+
+              y_offset = max(0.0, (target_content_h - cell.height) / 2.0)
               adj_cell_children = Enum.map(cell.children, &shift_box_y(&1, y_offset))
-              %Box{cell | y: new_row_y, height: target_row_h, children: adj_cell_children}
+              %Box{cell | y: new_row_y, height: target_content_h, children: adj_cell_children}
             end)
 
           %Box{row | y: new_row_y, height: target_row_h, children: stretched_cells}

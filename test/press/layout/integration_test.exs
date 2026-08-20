@@ -88,10 +88,10 @@ defmodule Press.Layout.IntegrationTest do
     [th1, th2] = thead_row.children
     [td1, td2] = tbody_row.children
 
-    assert_in_delta th1.width, root_box.width * 0.7, 0.1
-    assert_in_delta th2.width, root_box.width * 0.3, 0.1
-    assert_in_delta td1.width, root_box.width * 0.7, 0.1
-    assert_in_delta td2.width, root_box.width * 0.3, 0.1
+    assert_in_delta Box.border_box_width(th1), root_box.width * 0.7, 0.1
+    assert_in_delta Box.border_box_width(th2), root_box.width * 0.3, 0.1
+    assert_in_delta Box.border_box_width(td1), root_box.width * 0.7, 0.1
+    assert_in_delta Box.border_box_width(td2), root_box.width * 0.3, 0.1
   end
 
   defp find_all_tag(nodes, tag) do

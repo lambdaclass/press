@@ -233,14 +233,16 @@ defmodule Press.Layout.Table do
         span = get_colspan(cell_node)
         col_width = column_widths |> Enum.slice(c_idx, span) |> Enum.sum()
 
-        {cell_box, _next_y, _m} = Block.layout_block(cell_node, col_width, curr_x, row_y)
+        cell_node_unconstrained = put_in(cell_node.computed.width, :auto)
+
+        {cell_box, _next_y, _m} =
+          Block.layout_block(cell_node_unconstrained, col_width, curr_x, row_y)
 
         cell_bg = cell_node.computed.background_color || row_node.computed.background_color
 
         cell_box = %Box{
           cell_box
           | type: :table_cell,
-            width: col_width,
             x: curr_x,
             y: row_y,
             background_color: cell_bg
@@ -250,7 +252,12 @@ defmodule Press.Layout.Table do
       end)
 
     cell_boxes = Enum.reverse(cell_boxes)
-    content_row_height = Enum.map(cell_boxes, & &1.height) |> Enum.max(fn -> 0.0 end)
+
+    content_row_height =
+      Enum.map(cell_boxes, fn c ->
+        c.height + c.padding.top + c.padding.bottom + c.border_width.top + c.border_width.bottom
+      end)
+      |> Enum.max(fn -> 0.0 end)
 
     specified_row_height =
       case row_node.computed.height do
@@ -262,12 +269,19 @@ defmodule Press.Layout.Table do
 
     stretched_cells =
       Enum.map(cell_boxes, fn cell ->
-        if row_height > cell.height do
-          y_offset = (row_height - cell.height) / 2.0
+        target_content_h =
+          max(
+            0.0,
+            row_height - cell.padding.top - cell.padding.bottom - cell.border_width.top -
+              cell.border_width.bottom
+          )
+
+        if target_content_h > cell.height do
+          y_offset = (target_content_h - cell.height) / 2.0
           adjusted_children = Enum.map(cell.children, &shift_box_y(&1, y_offset))
-          %Box{cell | height: row_height, children: adjusted_children}
+          %Box{cell | height: target_content_h, children: adjusted_children}
         else
-          %Box{cell | height: row_height}
+          %Box{cell | height: target_content_h}
         end
       end)
 

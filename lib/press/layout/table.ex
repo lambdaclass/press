@@ -93,10 +93,20 @@ defmodule Press.Layout.Table do
     |> Enum.map(fn row_node ->
       row_node.children
       |> Enum.filter(&is_cell_node/1)
-      |> Enum.count()
+      |> Enum.map(&get_colspan/1)
+      |> Enum.sum()
     end)
     |> Enum.max(fn -> 0 end)
   end
+
+  defp get_colspan(%Node{element: %{attrs: %{"colspan" => str}}}) when is_binary(str) do
+    case Integer.parse(str) do
+      {n, ""} when n > 0 -> n
+      _ -> 1
+    end
+  end
+
+  defp get_colspan(_), do: 1
 
   defp is_cell_node(%Node{element: %{tag: tag}}), do: tag in ["th", "td"]
   defp is_cell_node(_), do: false
@@ -110,16 +120,23 @@ defmodule Press.Layout.Table do
         |> Enum.find_value(nil, fn %Node{children: children} ->
           cells = Enum.filter(children, &is_cell_node/1)
 
-          case Enum.at(cells, c) do
-            %Node{computed: %{width: {:percent, p}}} ->
-              p / 100.0 * table_width
+          cells
+          |> Enum.reduce_while({0, nil}, fn cell, {idx, _val} ->
+            span = get_colspan(cell)
 
-            %Node{computed: %{width: n}} when is_number(n) ->
-              n * 1.0
+            if c >= idx and c < idx + span do
+              w =
+                case cell.computed.width do
+                  {:percent, p} -> p / 100.0 * table_width / span
+                  n when is_number(n) -> n * 1.0 / span
+                  _ -> nil
+                end
 
-            _ ->
-              nil
-          end
+              {:halt, w}
+            else
+              {:cont, {idx + span, nil}}
+            end
+          end)
         end)
       end
 
@@ -142,17 +159,17 @@ defmodule Press.Layout.Table do
   defp layout_row(%Node{} = row_node, column_widths, origin_x, row_y) do
     cells = Enum.filter(row_node.children, &is_cell_node/1)
 
-    {cell_boxes, _final_x} =
+    {cell_boxes, _final_x, _final_c_idx} =
       cells
-      |> Enum.with_index()
-      |> Enum.reduce({[], origin_x}, fn {cell_node, c_idx}, {c_acc, curr_x} ->
-        col_width = Enum.at(column_widths, c_idx, 0.0)
+      |> Enum.reduce({[], origin_x, 0}, fn cell_node, {c_acc, curr_x, c_idx} ->
+        span = get_colspan(cell_node)
+        col_width = column_widths |> Enum.slice(c_idx, span) |> Enum.sum()
 
         {cell_box, _next_y, _m} = Block.layout_block(cell_node, col_width, curr_x, row_y)
 
         cell_box = %Box{cell_box | type: :table_cell, width: col_width, x: curr_x, y: row_y}
 
-        {[cell_box | c_acc], curr_x + col_width}
+        {[cell_box | c_acc], curr_x + col_width, c_idx + span}
       end)
 
     cell_boxes = Enum.reverse(cell_boxes)

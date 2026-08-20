@@ -53,7 +53,7 @@ File.write!("examples/invoice.pdf", pdf)
 
 ![Invoice example](examples/invoice.png)
 
-### Delivery Note (Albarán)
+### Delivery Note
 
 [examples/delivery_note.exs](examples/delivery_note.exs) renders a goods delivery note ([examples/delivery_note.html](examples/delivery_note.html)) with sender/recipient blocks, SKU table, weight summary, and signature areas (`mix run examples/delivery_note.exs`):
 
@@ -67,7 +67,7 @@ File.write!("examples/delivery_note.pdf", pdf)
 
 ![Delivery Note example](examples/delivery_note.png)
 
-### Payslip (Nómina)
+### Payslip
 
 [examples/payslip.exs](examples/payslip.exs) renders an employee payslip ([examples/payslip.html](examples/payslip.html)) with earnings, tax deductions, and net pay summary (`mix run examples/payslip.exs`):
 

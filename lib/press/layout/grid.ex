@@ -203,7 +203,85 @@ defmodule Press.Layout.Grid do
         {[child_box | acc], max(h_acc, child_h)}
       end)
 
-    {boxes, max_h}
+    explicit_h = find_explicit_height(row_items)
+
+    stretched_boxes =
+      if explicit_h && explicit_h > 0.0 do
+        Enum.map(boxes, &stretch_grid_item(&1, max_h))
+      else
+        boxes
+      end
+
+    {stretched_boxes, max_h}
+  end
+
+  defp find_explicit_height(row_items) do
+    Enum.find_value(row_items, nil, fn {child, _span, _offset} ->
+      node_explicit_height(child)
+    end)
+  end
+
+  defp node_explicit_height(%Node{computed: %{height: n}}) when is_number(n) and n > 0.0,
+    do: n * 1.0
+
+  defp node_explicit_height(%Node{children: children}) do
+    Enum.find_value(children, nil, &node_explicit_height/1)
+  end
+
+  defp node_explicit_height(_), do: nil
+
+  defp stretch_grid_item(
+         %Box{type: :block, tag: "div", children: [%Box{type: :table} = tbl_box]} = div_box,
+         max_h
+       ) do
+    stretched_tbl = stretch_table(tbl_box, max_h)
+    %Box{div_box | height: max_h, children: [stretched_tbl]}
+  end
+
+  defp stretch_grid_item(%Box{type: :table} = tbl_box, max_h) do
+    stretch_table(tbl_box, max_h)
+  end
+
+  defp stretch_grid_item(%Box{type: :block} = box, max_h) do
+    %Box{box | height: max_h}
+  end
+
+  defp stretch_grid_item(box, _max_h), do: box
+
+  defp stretch_table(%Box{type: :table, children: row_boxes} = tbl_box, max_h) do
+    row_count = length(row_boxes)
+
+    if row_count > 0 and max_h > tbl_box.height do
+      target_row_h = max_h / row_count
+
+      stretched_rows =
+        row_boxes
+        |> Enum.with_index()
+        |> Enum.map(fn {row, idx} ->
+          new_row_y = tbl_box.y + idx * target_row_h
+          y_offset = (target_row_h - row.height) / 2.0
+
+          stretched_cells =
+            Enum.map(row.children, fn cell ->
+              adj_cell_children = Enum.map(cell.children, &shift_box_y(&1, y_offset))
+              %Box{cell | y: new_row_y, height: target_row_h, children: adj_cell_children}
+            end)
+
+          %Box{row | y: new_row_y, height: target_row_h, children: stretched_cells}
+        end)
+
+      %Box{tbl_box | height: max_h, children: stretched_rows}
+    else
+      tbl_box
+    end
+  end
+
+  defp shift_box_y(%Box{children: children} = box, y_offset) do
+    %Box{
+      box
+      | y: box.y + y_offset,
+        children: Enum.map(children, &shift_box_y(&1, y_offset))
+    }
   end
 
   defp resolve_box_dimensions(%{top: t, right: r, bottom: b, left: l}, containing_width) do

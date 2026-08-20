@@ -43,7 +43,7 @@ defmodule Press.Style.Cascade do
           [Node.t() | Text.t()]
   def build(dom, external_rules, embedded_rules) do
     tagged_rules =
-      tag_origin(DefaultStylesheet.rules(), 0) ++
+      tag_origin(DefaultStylesheet.rules(), 1) ++
         tag_origin(external_rules, 1) ++
         tag_origin(embedded_rules, 2)
 

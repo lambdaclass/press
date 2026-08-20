@@ -9,6 +9,22 @@ defmodule Press.Layout.Block do
   Returns `{box, next_y, margin_bottom}`.
   """
   def layout_block(%Node{} = node, containing_width, container_x, start_y, images \\ %{}) do
+    cond do
+      node.element.tag in ~w(head style link meta script title iframe) ->
+        {%Box{type: :block, width: 0.0, height: 0.0}, start_y, 0.0}
+
+      node.element.tag == "table" ->
+        Press.Layout.Table.layout_table(node, containing_width, container_x, start_y)
+
+      Press.Layout.Grid.grid?(node) ->
+        Press.Layout.Grid.layout_grid(node, containing_width, container_x, start_y, images)
+
+      true ->
+        do_layout_block(node, containing_width, container_x, start_y, images)
+    end
+  end
+
+  defp do_layout_block(%Node{} = node, containing_width, container_x, start_y, images) do
     computed = node.computed
 
     # 1. Resolve box dimensions (percentages against containing_width)
@@ -114,8 +130,14 @@ defmodule Press.Layout.Block do
     else
       clean_children =
         Enum.reject(children, fn
-          %Text{content: c} -> String.trim(c) == ""
-          _ -> false
+          %Node{element: %{tag: tag}} when tag in ~w(head style link meta script title iframe) ->
+            true
+
+          %Text{content: c} ->
+            String.trim(c) == ""
+
+          _ ->
+            false
         end)
 
       {boxes, total_h, _last_margin} =

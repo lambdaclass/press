@@ -6,7 +6,7 @@ defmodule Press.Layout do
   alias Press.Layout.{Block, Box, Table}
   alias Press.Style.{Node, Text}
 
-  @non_visual_tags ~w(head style link meta script title)
+  @non_visual_tags ~w(head style link meta script title iframe)
 
   @doc """
   Lays out a styled tree according to page dimensions and margins.

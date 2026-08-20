@@ -140,21 +140,69 @@ defmodule Press.Layout.Table do
         end)
       end
 
-    total_explicit = explicit_widths |> Enum.reject(&is_nil/1) |> Enum.sum()
-    unspecified_count = Enum.count(explicit_widths, &is_nil/1)
+    content_weights =
+      for c <- 0..(col_count - 1) do
+        if Enum.at(explicit_widths, c) do
+          nil
+        else
+          max_w =
+            row_nodes
+            |> Enum.map(fn %Node{children: children} ->
+              cells = Enum.filter(children, &is_cell_node/1)
 
-    default_col_width =
-      if unspecified_count > 0 do
-        max(0.0, table_width - total_explicit) / unspecified_count
-      else
-        0.0
+              cells
+              |> Enum.reduce_while({0, 10.0}, fn cell, {idx, _val} ->
+                span = get_colspan(cell)
+
+                if c >= idx and c < idx + span do
+                  {:halt, estimate_cell_text_width(cell) / span}
+                else
+                  {:cont, {idx + span, 10.0}}
+                end
+              end)
+            end)
+            |> Enum.max(fn -> 10.0 end)
+
+          max(25.0, max_w + 16.0)
+        end
       end
 
-    Enum.map(explicit_widths, fn
-      nil -> default_col_width
-      w -> w
+    total_explicit = explicit_widths |> Enum.reject(&is_nil/1) |> Enum.sum()
+    unspecified_weights = Enum.reject(content_weights, &is_nil/1)
+    total_unspecified_weight = Enum.sum(unspecified_weights)
+    remaining_table_width = max(0.0, table_width - total_explicit)
+
+    Enum.zip(explicit_widths, content_weights)
+    |> Enum.map(fn
+      {w, _} when not is_nil(w) ->
+        w
+
+      {nil, weight} ->
+        if total_unspecified_weight > 0 do
+          weight / total_unspecified_weight * remaining_table_width
+        else
+          remaining_table_width / max(1, length(unspecified_weights))
+        end
     end)
   end
+
+  defp estimate_cell_text_width(%Node{} = node) do
+    texts = collect_text_strings(node)
+    fs = (is_number(node.computed.font_size) && node.computed.font_size) || 12.0
+    font = node.computed.font_family || :helvetica
+
+    Enum.map(texts, fn t ->
+      Press.Font.Metrics.text_width(font, t, fs)
+    end)
+    |> Enum.max(fn -> 10.0 end)
+  end
+
+  defp collect_text_strings(%Node{children: children}) do
+    Enum.flat_map(children, &collect_text_strings/1)
+  end
+
+  defp collect_text_strings(%Press.Style.Text{content: c}), do: [c]
+  defp collect_text_strings(_), do: []
 
   defp layout_row(%Node{} = row_node, column_widths, origin_x, row_y) do
     cells = Enum.filter(row_node.children, &is_cell_node/1)
@@ -167,7 +215,16 @@ defmodule Press.Layout.Table do
 
         {cell_box, _next_y, _m} = Block.layout_block(cell_node, col_width, curr_x, row_y)
 
-        cell_box = %Box{cell_box | type: :table_cell, width: col_width, x: curr_x, y: row_y}
+        cell_bg = cell_node.computed.background_color || row_node.computed.background_color
+
+        cell_box = %Box{
+          cell_box
+          | type: :table_cell,
+            width: col_width,
+            x: curr_x,
+            y: row_y,
+            background_color: cell_bg
+        }
 
         {[cell_box | c_acc], curr_x + col_width, c_idx + span}
       end)
@@ -189,6 +246,7 @@ defmodule Press.Layout.Table do
       y: row_y,
       width: row_width,
       height: row_height,
+      background_color: row_node.computed.background_color,
       children: stretched_cells
     }
 

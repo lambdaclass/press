@@ -129,23 +129,19 @@ defmodule Press.Image.PNG do
   defp unfilter_line(0, scanline, _prior, _bpp), do: scanline
 
   defp unfilter_line(filter_type, scanline, prior, bpp) do
-    scanline_bytes = :binary.bin_to_list(scanline)
-    prior_bytes = :binary.bin_to_list(prior)
-
-    unfiltered_bytes =
-      do_unfilter(filter_type, scanline_bytes, prior_bytes, bpp, 0, [], [])
-
-    :binary.list_to_bin(unfiltered_bytes)
+    len = byte_size(scanline)
+    unfilter_bytes(scanline, prior, filter_type, bpp, 0, len, <<>>)
   end
 
-  defp do_unfilter(_type, [], _prior, _bpp, _idx, _raw_window, acc) do
-    Enum.reverse(acc)
+  defp unfilter_bytes(_scanline, _prior, _type, _bpp, i, len, acc) when i >= len do
+    acc
   end
 
-  defp do_unfilter(type, [x | rest_x], [up | rest_up], bpp, idx, raw_window, acc) do
-    left = if idx >= bpp, do: Enum.at(raw_window, bpp - 1, 0), else: 0
-    # previous up-left
-    up_left = if idx >= bpp, do: Enum.at(rest_up, -1, 0), else: 0
+  defp unfilter_bytes(scanline, prior, type, bpp, i, len, acc) do
+    x = :binary.at(scanline, i)
+    left = if i >= bpp, do: :binary.at(acc, i - bpp), else: 0
+    up = :binary.at(prior, i)
+    up_left = if i >= bpp, do: :binary.at(prior, i - bpp), else: 0
 
     raw =
       case type do
@@ -156,8 +152,7 @@ defmodule Press.Image.PNG do
         _ -> x
       end
 
-    new_window = [raw | Enum.take(raw_window, bpp - 1)]
-    do_unfilter(type, rest_x, rest_up, bpp, idx + 1, new_window, [raw | acc])
+    unfilter_bytes(scanline, prior, type, bpp, i + 1, len, <<acc::binary, raw::8>>)
   end
 
   defp paeth_predictor(a, b, c) do

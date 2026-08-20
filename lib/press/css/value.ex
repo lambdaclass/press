@@ -68,6 +68,13 @@ defmodule Press.CSS.Value do
   @multiplier_regex ~r/^-?\d+(?:\.\d+)?$/
   @absolute_length_regex ~r/^(-?\d+(?:\.\d+)?)(mm|cm|in|pt|px|em|rem)$/
 
+  @oklch_regex ~r/^oklch\(\s*([\d\.]+%?)\s+([\d\.]+)\s+([\d\.]+)\s*\)$/
+  @var_base_100_regex ~r/^var\(--color-base-100/
+  @var_base_200_regex ~r/^var\(--color-base-200/
+  @var_base_300_regex ~r/^var\(--color-base-300/
+  @var_base_content_regex ~r/^var\(--color-base-content/
+  @var_primary_regex ~r/^var\(--color-primary/
+
   def parse_color(str) do
     str = String.trim(str)
 
@@ -85,10 +92,86 @@ defmodule Press.CSS.Value do
           String.to_integer(b) / 255.0}}
 
       nil ->
-        case Map.fetch(@named_colors, String.downcase(str)) do
-          {:ok, hex} -> parse_hex_color("#" <> hex)
-          :error -> :error
+        case parse_oklch(str) do
+          {:ok, rgb} ->
+            {:ok, rgb}
+
+          :error ->
+            case parse_var(str) do
+              {:ok, rgb} ->
+                {:ok, rgb}
+
+              :error ->
+                case Map.fetch(@named_colors, String.downcase(str)) do
+                  {:ok, hex} -> parse_hex_color("#" <> hex)
+                  :error -> :error
+                end
+            end
         end
+    end
+  end
+
+  defp parse_oklch(str) do
+    case Regex.run(@oklch_regex, str) do
+      [_, l_str, c_str, h_str] ->
+        l =
+          if String.ends_with?(l_str, "%") do
+            parse_number(String.trim_trailing(l_str, "%")) / 100.0
+          else
+            parse_number(l_str)
+          end
+
+        c = parse_number(c_str)
+        h = parse_number(h_str)
+        {:ok, oklch_to_rgb(l, c, h)}
+
+      nil ->
+        :error
+    end
+  end
+
+  defp parse_var(str) do
+    cond do
+      Regex.match?(@var_base_100_regex, str) -> {:ok, {0.98, 0.98, 0.98}}
+      Regex.match?(@var_base_200_regex, str) -> {:ok, {0.9472, 0.9472, 0.9502}}
+      Regex.match?(@var_base_300_regex, str) -> {:ok, {0.8945, 0.8945, 0.9062}}
+      Regex.match?(@var_base_content_regex, str) -> {:ok, {0.15, 0.15, 0.15}}
+      Regex.match?(@var_primary_regex, str) -> {:ok, {0.31, 0.27, 0.90}}
+      true -> :error
+    end
+  end
+
+  defp oklch_to_rgb(l, c, h) do
+    h_rad = h * :math.pi() / 180.0
+    a = c * :math.cos(h_rad)
+    b = c * :math.sin(h_rad)
+
+    l_ = l + 0.3963377774 * a + 0.2158037573 * b
+    m_ = l - 0.1055613458 * a - 0.0638541728 * b
+    s_ = l - 0.0894841775 * a - 1.2914855480 * b
+
+    l3 = l_ * l_ * l_
+    m3 = m_ * m_ * m_
+    s3 = s_ * s_ * s_
+
+    r_lin = +4.0767416621 * l3 - 3.3077115913 * m3 + 0.2309699292 * s3
+    g_lin = -1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3
+    b_lin = -0.0041960863 * l3 - 0.7034186147 * m3 + 1.7076147010 * s3
+
+    r = linear_to_srgb(r_lin)
+    g = linear_to_srgb(g_lin)
+    b = linear_to_srgb(b_lin)
+
+    {Float.round(r, 4), Float.round(g, 4), Float.round(b, 4)}
+  end
+
+  defp linear_to_srgb(c) do
+    clamped = max(0.0, min(1.0, c))
+
+    if clamped <= 0.0031308 do
+      12.92 * clamped
+    else
+      1.055 * :math.pow(clamped, 1.0 / 2.4) - 0.055
     end
   end
 

@@ -18,6 +18,17 @@ defmodule Press.CSS.ValueTest do
       assert Value.parse_color("black") == {:ok, {0.0, 0.0, 0.0}}
     end
 
+    test "parses oklch()" do
+      {:ok, {r, g, b}} = Value.parse_color("oklch(96% 0.001 286.375)")
+      assert r > 0.9 and g > 0.9 and b > 0.9
+    end
+
+    test "parses CSS variables for daisyUI themes" do
+      assert Value.parse_color("var(--color-base-100)") == {:ok, {0.98, 0.98, 0.98}}
+      {:ok, {r, g, b}} = Value.parse_color("var(--color-base-200)")
+      assert r > 0.9 and g > 0.9 and b > 0.9
+    end
+
     test "rejects unrecognized color text" do
       assert Value.parse_color("notacolor") == :error
     end

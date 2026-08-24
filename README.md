@@ -1,5 +1,10 @@
 # Press
 
+[![Hex Package](https://img.shields.io/hexpm/v/press.svg)](https://hex.pm/packages/press)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-purple.svg)](https://hexdocs.pm/press)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/altenwald/press/blob/main/LICENSE)
+[![CI](https://github.com/altenwald/press/actions/workflows/ci.yml/badge.svg)](https://github.com/altenwald/press/actions/workflows/ci.yml)
+
 Press is a dependency-free Elixir library for rendering HTML+CSS into PDF,
 targeting structured business documents: invoices, delivery notes, payslips,
 and reports. "Dependency-free" means zero runtime dependencies — only modules

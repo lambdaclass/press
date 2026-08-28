@@ -28,7 +28,7 @@ defmodule Press.MixProject do
 
   defp package do
     [
-      files: ~w(lib mix.exs README* LICENSE* .formatter.exs),
+      files: ~w(lib assets mix.exs README* LICENSE* .formatter.exs),
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url}
     ]
@@ -37,6 +37,8 @@ defmodule Press.MixProject do
   defp docs do
     [
       main: "readme",
+      logo: "assets/logo.png",
+      assets: %{"assets" => "assets"},
       source_ref: "v#{@version}",
       source_url: @source_url,
       extras: ["README.md", "LICENSE"]

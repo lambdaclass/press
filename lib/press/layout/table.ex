@@ -128,6 +128,8 @@ defmodule Press.Layout.Table do
 
   defp get_colspan(_), do: 1
 
+  @min_column_width 12.0
+
   defp is_cell_node(%Node{element: %{tag: tag}}), do: tag in ["th", "td"]
   defp is_cell_node(_), do: false
 
@@ -165,109 +167,181 @@ defmodule Press.Layout.Table do
   defp calculate_column_widths(_row_nodes, 0, table_width, _hints, _layout), do: [table_width]
 
   defp calculate_column_widths(row_nodes, col_count, table_width, col_hints, table_layout) do
-    explicit_widths =
-      for c <- 0..(col_count - 1) do
-        row_nodes
-        |> Enum.find_value(nil, fn %Node{children: children} ->
-          cells = Enum.filter(children, &is_cell_node/1)
-
-          cells
-          |> Enum.reduce_while({0, nil}, fn cell, {idx, _val} ->
-            span = get_colspan(cell)
-
-            if c >= idx and c < idx + span do
-              w =
-                case cell.computed.width do
-                  {:percent, p} -> p / 100.0 * table_width / span
-                  n when is_number(n) -> n * 1.0 / span
-                  _ -> nil
-                end
-
-              {:halt, w}
-            else
-              {:cont, {idx + span, nil}}
-            end
-          end)
-          |> case do
-            {_idx, fallback} -> fallback
-            width -> width
-          end
-        end)
-      end
-
-    content_weights =
-      for c <- 0..(col_count - 1) do
-        if Enum.at(explicit_widths, c) do
-          nil
-        else
-          max_w =
-            row_nodes
-            |> Enum.map(fn %Node{children: children} ->
-              cells = Enum.filter(children, &is_cell_node/1)
-
-              cells
-              |> Enum.reduce_while({0, 10.0}, fn cell, {idx, _val} ->
-                span = get_colspan(cell)
-
-                if c >= idx and c < idx + span do
-                  {:halt, estimate_cell_text_width(cell) / span}
-                else
-                  {:cont, {idx + span, 10.0}}
-                end
-              end)
-              |> case do
-                {_idx, fallback} -> fallback
-                width -> width
-              end
-            end)
-            |> Enum.max(fn -> 10.0 end)
-
-          max(25.0, max_w + 16.0)
-        end
-      end
-
-    explicit_widths =
-      explicit_widths
+    declared =
+      0..(col_count - 1)
+      |> Enum.map(fn c -> declared_width(row_nodes, c, table_width) end)
       |> Enum.with_index()
       |> Enum.map(fn {w, i} -> w || Enum.at(col_hints, i) end)
 
-    # `table-layout: fixed` takes the declared widths as final and splits what
-    # is left equally, instead of measuring any content.
-    content_weights =
-      if table_layout == :fixed do
-        Enum.map(explicit_widths, fn
-          nil -> 1.0
-          _ -> nil
-        end)
-      else
-        content_weights
-      end
+    if table_layout == :fixed do
+      fixed_widths(declared, table_width)
+    else
+      auto_widths(row_nodes, col_count, table_width, declared)
+    end
+  end
 
-    total_explicit = explicit_widths |> Enum.reject(&is_nil/1) |> Enum.sum()
-    unspecified_weights = Enum.reject(content_weights, &is_nil/1)
-    total_unspecified_weight = Enum.sum(unspecified_weights)
-    remaining_table_width = max(0.0, table_width - total_explicit)
+  # `table-layout: fixed` never measures content: the declared widths stand and
+  # whatever is left is split equally between the rest.
+  defp fixed_widths(declared, table_width) do
+    known = declared |> Enum.reject(&is_nil/1) |> Enum.sum()
+    unknown = Enum.count(declared, &is_nil/1)
+    share = if unknown > 0, do: max(0.0, table_width - known) / unknown, else: 0.0
 
-    resolved_unspecified =
-      if total_unspecified_weight > 0 do
-        Enum.map(unspecified_weights, fn w ->
-          w / total_unspecified_weight * remaining_table_width
-        end)
-      else
-        count = max(1, length(unspecified_weights))
-        Enum.map(unspecified_weights, fn _ -> remaining_table_width / count end)
-      end
+    Enum.map(declared, fn
+      nil -> share
+      w -> w
+    end)
+  end
 
-    {final_widths, _} =
-      Enum.reduce(explicit_widths, {[], resolved_unspecified}, fn
-        w, {acc, unspec} when not is_nil(w) ->
-          {[w | acc], unspec}
-
-        nil, {acc, [u | rest_u]} ->
-          {[u | acc], rest_u}
+  # CSS 2.1 §17.5.2.2. Each column is measured twice — the width it needs to
+  # avoid overflowing a word (min-content) and the width it would take with no
+  # wrapping at all (max-content) — and the table's space is handed out between
+  # those two bounds. Distributing by max-content alone, as a single weight,
+  # gives a column holding one long sentence most of the table.
+  defp auto_widths(row_nodes, col_count, table_width, declared) do
+    bounds =
+      0..(col_count - 1)
+      |> Enum.map(fn c ->
+        case Enum.at(declared, c) do
+          nil -> column_bounds(row_nodes, c)
+          w -> {w, w}
+        end
       end)
 
-    Enum.reverse(final_widths)
+    mins = Enum.map(bounds, &elem(&1, 0))
+    maxs = Enum.map(bounds, &elem(&1, 1))
+    total_min = Enum.sum(mins)
+    total_max = Enum.sum(maxs)
+
+    cond do
+      total_max <= table_width ->
+        grow_from(maxs, maxs, table_width - total_max, total_max)
+
+      total_min <= table_width ->
+        slack = Enum.zip(mins, maxs) |> Enum.map(fn {lo, hi} -> hi - lo end)
+        grow_from(mins, slack, table_width - total_min, Enum.sum(slack))
+
+      true ->
+        shrink_to(mins, table_width, total_min)
+    end
+  end
+
+  defp grow_from(base, weights, extra, total_weight) when total_weight > 0 do
+    Enum.zip(base, weights) |> Enum.map(fn {b, w} -> b + extra * w / total_weight end)
+  end
+
+  defp grow_from(base, _weights, extra, _total_weight) do
+    share = extra / max(1, length(base))
+    Enum.map(base, &(&1 + share))
+  end
+
+  defp shrink_to(mins, table_width, total_min) when total_min > 0 do
+    Enum.map(mins, &(&1 * table_width / total_min))
+  end
+
+  defp shrink_to(mins, _table_width, _total_min), do: mins
+
+  defp column_bounds(row_nodes, c) do
+    row_nodes
+    |> Enum.map(fn row -> cell_bounds_at(row, c) end)
+    |> Enum.reject(&is_nil/1)
+    |> case do
+      [] ->
+        {@min_column_width, @min_column_width}
+
+      pairs ->
+        {
+          max(@min_column_width, pairs |> Enum.map(&elem(&1, 0)) |> Enum.max()),
+          max(@min_column_width, pairs |> Enum.map(&elem(&1, 1)) |> Enum.max())
+        }
+    end
+  end
+
+  # A cell spanning several columns contributes an even share to each of them.
+  defp cell_bounds_at(%Node{children: children}, c) do
+    children
+    |> Enum.filter(&is_cell_node/1)
+    |> Enum.reduce_while(0, fn cell, idx ->
+      span = get_colspan(cell)
+
+      if c >= idx and c < idx + span do
+        surround = cell_surround(cell)
+
+        {:halt,
+         {min_cell_text_width(cell) / span + surround,
+          estimate_cell_text_width(cell) / span + surround}}
+      else
+        {:cont, idx + span}
+      end
+    end)
+    |> case do
+      idx when is_integer(idx) -> nil
+      bounds -> bounds
+    end
+  end
+
+  defp cell_surround(%Node{computed: computed}) do
+    side = fn box, key ->
+      case box && Map.get(box, key) do
+        n when is_number(n) -> n * 1.0
+        _ -> 0.0
+      end
+    end
+
+    side.(computed.padding, :left) + side.(computed.padding, :right) +
+      side.(computed.border_width, :left) + side.(computed.border_width, :right)
+  end
+
+  # Min-content is the longest single word: below that the text overflows
+  # instead of wrapping.
+  defp min_cell_text_width(%Node{} = node) do
+    {font, fs} = cell_font(node)
+
+    node
+    |> collect_text_strings()
+    |> Enum.flat_map(&String.split(&1, ~r/\s+/, trim: true))
+    |> Enum.map(&Press.Font.Metrics.text_width(font, &1, fs))
+    |> Enum.max(fn -> 0.0 end)
+  end
+
+  defp cell_font(%Node{computed: computed}) do
+    fs = (is_number(computed.font_size) && computed.font_size) || 12.0
+
+    font =
+      case {computed.font_family, computed.font_weight} do
+        {:helvetica, :bold} -> :helvetica_bold
+        {:times, :bold} -> :times_bold
+        {:courier, :bold} -> :courier_bold
+        {f, _} -> f || :helvetica
+      end
+
+    {font, fs}
+  end
+
+  defp declared_width(row_nodes, c, table_width) do
+    row_nodes
+    |> Enum.find_value(nil, fn row ->
+      row.children
+      |> Enum.filter(&is_cell_node/1)
+      |> Enum.reduce_while(0, fn cell, idx ->
+        span = get_colspan(cell)
+
+        if c >= idx and c < idx + span do
+          {:halt,
+           case cell.computed.width do
+             {:percent, p} -> p / 100.0 * table_width / span
+             n when is_number(n) -> n * 1.0 / span
+             _ -> nil
+           end}
+        else
+          {:cont, idx + span}
+        end
+      end)
+      |> case do
+        idx when is_integer(idx) -> nil
+        width -> width
+      end
+    end)
   end
 
   defp estimate_cell_text_width(%Node{} = node) do

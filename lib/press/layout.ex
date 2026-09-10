@@ -26,9 +26,10 @@ defmodule Press.Layout do
       Enum.reduce(visual_nodes, {[], 0.0, 0.0}, fn child, {acc, curr_y, prev_margin_bottom} ->
         case child do
           %Node{element: %{tag: "table"}} = table_node ->
-            curr_top_margin = get_top_margin(table_node.computed.margin, content_width)
-            margin_gap = max(prev_margin_bottom, curr_top_margin)
-            child_start_y = origin_y + curr_y + margin_gap - curr_top_margin
+            collapsed_top = Press.Layout.Margins.collapsed_top(table_node, content_width)
+              own_top_margin = get_top_margin(table_node.computed.margin, content_width)
+            margin_gap = max(prev_margin_bottom, collapsed_top)
+            child_start_y = origin_y + curr_y + margin_gap - own_top_margin
 
             {table_box, next_y_abs, child_margin_bottom} =
               Table.layout_table(table_node, content_width, origin_x, child_start_y)
@@ -37,9 +38,10 @@ defmodule Press.Layout do
             {[table_box | acc], consumed_height, child_margin_bottom}
 
           %Node{element: %{tag: "img"}} = img_node ->
-            curr_top_margin = get_top_margin(img_node.computed.margin, content_width)
-            margin_gap = max(prev_margin_bottom, curr_top_margin)
-            child_start_y = origin_y + curr_y + margin_gap - curr_top_margin
+            collapsed_top = Press.Layout.Margins.collapsed_top(img_node, content_width)
+              own_top_margin = get_top_margin(img_node.computed.margin, content_width)
+            margin_gap = max(prev_margin_bottom, collapsed_top)
+            child_start_y = origin_y + curr_y + margin_gap - own_top_margin
 
             {img_box, next_y_abs, child_margin_bottom} =
               Press.Layout.Image.layout_image(
@@ -54,9 +56,10 @@ defmodule Press.Layout do
             {[img_box | acc], consumed_height, child_margin_bottom}
 
           %Node{} = node ->
-            curr_top_margin = get_top_margin(node.computed.margin, content_width)
-            margin_gap = max(prev_margin_bottom, curr_top_margin)
-            child_start_y = origin_y + curr_y + margin_gap - curr_top_margin
+            collapsed_top = Press.Layout.Margins.collapsed_top(node, content_width)
+              own_top_margin = get_top_margin(node.computed.margin, content_width)
+            margin_gap = max(prev_margin_bottom, collapsed_top)
+            child_start_y = origin_y + curr_y + margin_gap - own_top_margin
 
             {block_box, next_y_abs, child_margin_bottom} =
               Block.layout_block(node, content_width, origin_x, child_start_y, images)

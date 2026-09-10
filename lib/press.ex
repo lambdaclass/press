@@ -18,6 +18,10 @@ defmodule Press do
 
   - `:css` — external CSS string applied before embedded `<style>` blocks.
   - `:images` — a map of `%{src => binary_data}` for image references.
+  - `:bold_boost` — synthesises a heavier bold by stroking the glyphs, as a
+    fraction of the font size (e.g. `0.02`). The base-14 fonts stop at
+    Helvetica-Bold, so this is the only way to reach the weight of a heavier
+    face. Defaults to `0.0`, which leaves the bold face untouched.
   - `:page` — overrides the `@page` rule. `size:` takes `{width_pt, height_pt}` or
     `:a4` / `:letter` / `:legal`, and `landscape: true` swaps the resolved pair.
     `margin:` takes a number of points for all four sides, or a map with any of
@@ -59,7 +63,11 @@ defmodule Press do
     pages = Paginate.paginate(root_box, page_config)
 
     # 7. Render to PDF Document
-    doc = Renderer.render_document(pages, page_config)
+    doc =
+      Renderer.render_document(
+        pages,
+        Map.put(page_config, :bold_boost, Keyword.get(opts, :bold_boost, 0.0))
+      )
 
     # 8. Write PDF Binary
     pdf_bytes = Writer.to_binary(doc)

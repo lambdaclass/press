@@ -7,30 +7,36 @@ defmodule Press.PDF.Renderer do
   @doc """
   Transforms a list of layout `Page` structs into a `Press.PDF.Document`.
   """
-  def render_document(pages, _page_config) do
+  def render_document(pages, page_config) do
+    # Helvetica-Bold is the heaviest sans the base-14 offers. `bold_boost`
+    # strokes the glyphs on top of the fill to reach a heavier weight, the same
+    # trick a browser uses for a family with no bold face, expressed as a
+    # fraction of the font size.
+    boost = Map.get(page_config || %{}, :bold_boost, 0.0)
+
     Enum.reduce(pages, Document.new(), fn %Page{} = page, doc ->
       {doc_with_page, page_index} = Document.add_page(doc, page.width, page.height)
-      render_boxes(page.boxes, doc_with_page, page_index, page.height)
+      render_boxes(page.boxes, doc_with_page, page_index, page.height, boost)
     end)
   end
 
-  defp render_boxes(boxes, doc, page_index, page_height) do
+  defp render_boxes(boxes, doc, page_index, page_height, boost) do
     Enum.reduce(boxes, doc, fn box, acc_doc ->
-      render_box(box, acc_doc, page_index, page_height)
+      render_box(box, acc_doc, page_index, page_height, boost)
     end)
   end
 
-  defp render_box(%Box{} = box, doc, page_index, page_height) do
+  defp render_box(%Box{} = box, doc, page_index, page_height, boost) do
     doc
     |> render_background(box, page_index, page_height)
     |> render_borders(box, page_index, page_height)
-    |> render_text(box, page_index, page_height)
+    |> render_text(box, page_index, page_height, boost)
     |> render_image(box, page_index, page_height)
-    |> render_children(box.children, page_index, page_height)
+    |> render_children(box.children, page_index, page_height, boost)
   end
 
-  defp render_children(doc, children, page_index, page_height) do
-    render_boxes(children, doc, page_index, page_height)
+  defp render_children(doc, children, page_index, page_height, boost) do
+    render_boxes(children, doc, page_index, page_height, boost)
   end
 
   defp render_background(doc, %Box{background_color: nil}, _page_idx, _h), do: doc
@@ -115,7 +121,8 @@ defmodule Press.PDF.Renderer do
          doc,
          %Box{type: :text, text: text, font: font, font_size: size, color: color} = box,
          page_idx,
-         page_height
+         page_height,
+         boost
        )
        when is_binary(text) and text != "" do
     pdf_x = box.x
@@ -125,11 +132,26 @@ defmodule Press.PDF.Renderer do
       font: font || :helvetica,
       size: size || 12.0,
       color: color || {0, 0, 0},
-      letter_spacing: box.letter_spacing || 0.0
+      letter_spacing: box.letter_spacing || 0.0,
+      stroke_width: stroke_for(font, size, boost)
     )
   end
 
-  defp render_text(doc, _box, _page_idx, _h), do: doc
+  defp render_text(doc, _box, _page_idx, _h, _boost), do: doc
+
+  @bold_fonts [
+    :helvetica_bold,
+    :helvetica_bold_oblique,
+    :times_bold,
+    :times_bold_italic,
+    :courier_bold,
+    :courier_bold_oblique
+  ]
+
+  defp stroke_for(font, size, boost) when font in @bold_fonts and is_number(boost) and boost > 0.0,
+    do: (size || 12.0) * boost
+
+  defp stroke_for(_font, _size, _boost), do: 0.0
 
   # Distance from the top of the line box down to the baseline: the leading is
   # split evenly above and below the text, so a line taller than the glyphs

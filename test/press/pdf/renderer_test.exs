@@ -40,7 +40,7 @@ defmodule Press.PDF.RendererTest do
       # for a 24pt glyph in a 14.4pt line box the leading is negative and the
       # offset is (14.4 - 22.2) / 2 + 17.232 = 13.332.
       assert [
-               {:text, 50.0, pdf_y, :helvetica_bold, 24.0, {1.0, +0.0, +0.0}, "Invoice", +0.0}
+               {:text, 50.0, pdf_y, :helvetica_bold, 24.0, {1.0, +0.0, +0.0}, "Invoice", %{}}
              ] = pdf_page.ops
 
       assert_in_delta pdf_y, 800 - 100 - 13.332, 0.1

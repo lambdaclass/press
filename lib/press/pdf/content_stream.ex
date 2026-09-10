@@ -7,33 +7,41 @@ defmodule Press.PDF.ContentStream do
     Enum.map_join(ops, "\n", &render_op(&1, font_resource_names, image_resource_names))
   end
 
-  defp render_op(
-         {:text, x, y, font, size, color, text},
-         font_resource_names,
-         image_resource_names
-       ) do
-    render_op({:text, x, y, font, size, color, text, 0.0}, font_resource_names, image_resource_names)
+  defp render_op({:text, x, y, font, size, color, text}, fonts, images) do
+    render_op({:text, x, y, font, size, color, text, %{}}, fonts, images)
   end
 
   defp render_op(
-         {:text, x, y, font, size, {r, g, b}, text, tracking},
+         {:text, x, y, font, size, {r, g, b}, text, style},
          font_resource_names,
          _image_resource_names
        ) do
     resource = Map.fetch!(font_resource_names, font)
+    color = "#{Syntax.number(r)} #{Syntax.number(g)} #{Syntax.number(b)}"
+    tracking = Map.get(style, :letter_spacing, 0.0)
+    stroke = Map.get(style, :stroke_width, 0.0)
+
+    # Rendering mode 2 fills and then strokes the glyph outline, which is how a
+    # weight heavier than the available face is synthesised.
+    embolden =
+      if stroke > 0.0 do
+        ["#{color} RG", "#{Syntax.number(stroke)} w", "2 Tr"]
+      else
+        []
+      end
 
     Enum.join(
-      [
-        "q",
-        "#{Syntax.number(r)} #{Syntax.number(g)} #{Syntax.number(b)} rg",
-        "BT",
-        "#{resource} #{Syntax.number(size)} Tf",
-        "#{Syntax.number(tracking)} Tc",
-        "#{Syntax.number(x)} #{Syntax.number(y)} Td",
-        "(#{text |> to_winansi() |> Syntax.escape_string()}) Tj",
-        "ET",
-        "Q"
-      ],
+      ["q", "#{color} rg"] ++
+        embolden ++
+        [
+          "BT",
+          "#{resource} #{Syntax.number(size)} Tf",
+          "#{Syntax.number(tracking)} Tc",
+          "#{Syntax.number(x)} #{Syntax.number(y)} Td",
+          "(#{text |> to_winansi() |> Syntax.escape_string()}) Tj",
+          "ET",
+          "Q"
+        ],
       "\n"
     )
   end

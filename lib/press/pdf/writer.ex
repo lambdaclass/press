@@ -77,7 +77,7 @@ defmodule Press.PDF.Writer do
     |> Enum.flat_map(fn page ->
       Enum.flat_map(page.ops, fn
         {:text, _x, _y, font, _size, _color, _text} -> [font]
-        {:text, _x, _y, font, _size, _color, _text, _tracking} -> [font]
+        {:text, _x, _y, font, _size, _color, _text, _style} -> [font]
         _other -> []
       end)
     end)

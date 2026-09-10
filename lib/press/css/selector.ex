@@ -79,12 +79,17 @@ defmodule Press.CSS.Selector do
   end
 
   defp extract_pseudos(text) do
+    # A trailing capture group that did not take part is left out of the scan
+    # result, so the functional forms are recognised by their own name rather
+    # than by how many groups came back.
     pseudos =
       Regex.scan(@structural, text)
-      |> Enum.map(fn
-        [_, "nth-child(" <> _, arg, _] -> {:nth_child, parse_nth(arg)}
-        [_, "nth-of-type(" <> _, _, arg] -> {:nth_of_type, parse_nth(arg)}
-        [_, name | _] -> String.to_atom(String.replace(name, "-", "_"))
+      |> Enum.map(fn [_whole, name | args] ->
+        case name do
+          "nth-child(" <> _ -> {:nth_child, parse_nth(Enum.at(args, 0, ""))}
+          "nth-of-type(" <> _ -> {:nth_of_type, parse_nth(Enum.at(args, 1, Enum.at(args, 0, "")))}
+          plain -> String.to_atom(String.replace(plain, "-", "_"))
+        end
       end)
 
     {pseudos, Regex.replace(@structural, text, "")}

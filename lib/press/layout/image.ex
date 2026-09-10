@@ -54,7 +54,17 @@ defmodule Press.Layout.Image do
               {intrinsic_w, intrinsic_h}
           end
 
-        box_x = container_x + margin.left
+        # An image is inline-level, so the containing block's `text-align`
+        # places it just as it would a word.
+        outer_w =
+          content_w + padding.left + padding.right + border_width.left + border_width.right +
+            margin.left + margin.right
+
+        # `text-align` inherits, so the image already carries its containing
+        # block's value.
+        box_x =
+          container_x + margin.left +
+            align_offset(Map.get(computed, :text_align, :left), containing_width, outer_w)
         box_y = start_y + margin.top
 
         total_outer_height =
@@ -93,6 +103,14 @@ defmodule Press.Layout.Image do
         {box, start_y, 0.0}
     end
   end
+
+  defp align_offset(:center, containing_width, outer_w),
+    do: max(0.0, (containing_width - outer_w) / 2.0)
+
+  defp align_offset(:right, containing_width, outer_w),
+    do: max(0.0, containing_width - outer_w)
+
+  defp align_offset(_text_align, _containing_width, _outer_w), do: 0.0
 
   defp resolve_img_dim(attr, computed_val, containing_width) do
     cond do

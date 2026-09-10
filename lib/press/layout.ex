@@ -16,9 +16,17 @@ defmodule Press.Layout do
     {page_width, _page_height} = page_config.size
     margin = page_config.margin
 
-    content_width = max(0.0, page_width - margin.left - margin.right)
-    origin_x = margin.left
-    origin_y = margin.top
+    page_box_width = max(0.0, page_width - margin.left - margin.right)
+
+    # `<html>` and `<body>` are flattened away rather than laid out, so their
+    # own box has to be folded into the page's content area — a document with
+    # `body { padding: 20px }` expects everything inside it to be that much
+    # narrower, and every column width is measured against it.
+    inset = wrapper_inset(styled_tree, page_box_width)
+
+    content_width = max(0.0, page_box_width - inset.left - inset.right)
+    origin_x = margin.left + inset.left
+    origin_y = margin.top + inset.top
 
     visual_nodes = filter_visual_nodes(styled_tree)
 
@@ -98,6 +106,48 @@ defmodule Press.Layout do
       children: Enum.reverse(top_boxes)
     }
   end
+
+  @wrapper_tags ["html", "body"]
+
+  defp wrapper_inset(nodes, containing_width) do
+    Enum.reduce(nodes, %{left: 0.0, right: 0.0, top: 0.0}, fn node, acc ->
+      case node do
+        %Node{element: %{tag: tag}, children: children} when tag in @wrapper_tags ->
+          own = box_inset(node, containing_width)
+          inner = wrapper_inset(children, max(0.0, containing_width - own.left - own.right))
+
+          %{
+            left: acc.left + own.left + inner.left,
+            right: acc.right + own.right + inner.right,
+            top: acc.top + own.top + inner.top
+          }
+
+        _ ->
+          acc
+      end
+    end)
+  end
+
+  defp box_inset(%Node{computed: computed}, containing_width) do
+    side = fn key, edge ->
+      computed
+      |> Map.get(key)
+      |> case do
+        nil -> 0.0
+        box -> resolve_side(Map.get(box, edge), containing_width)
+      end
+    end
+
+    %{
+      left: side.(:margin, :left) + side.(:border_width, :left) + side.(:padding, :left),
+      right: side.(:margin, :right) + side.(:border_width, :right) + side.(:padding, :right),
+      top: side.(:margin, :top) + side.(:border_width, :top) + side.(:padding, :top)
+    }
+  end
+
+  defp resolve_side({:percent, p}, containing_width), do: p / 100.0 * containing_width
+  defp resolve_side(n, _containing_width) when is_number(n), do: n * 1.0
+  defp resolve_side(_, _containing_width), do: 0.0
 
   defp filter_visual_nodes(nodes) do
     filtered = Enum.flat_map(nodes, &filter_node/1)

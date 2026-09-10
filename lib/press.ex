@@ -18,6 +18,11 @@ defmodule Press do
 
   - `:css` — external CSS string applied before embedded `<style>` blocks.
   - `:images` — a map of `%{src => binary_data}` for image references.
+  - `:page` — overrides the `@page` rule. `size:` takes `{width_pt, height_pt}` or
+    `:a4` / `:letter` / `:legal`, and `landscape: true` swaps the resolved pair.
+    `margin:` takes a number of points for all four sides, or a map with any of
+    `:top`, `:right`, `:bottom`, `:left`. Given as render options so a caller
+    driving page setup programmatically does not have to synthesise CSS.
 
   ## Examples
 
@@ -42,7 +47,9 @@ defmodule Press do
     {emb_page_rules, emb_style_rules} = CSSParser.parse(embedded_css)
 
     # 4. Cascade & Page Config
-    page_config = Cascade.page_config(ext_page_rules, emb_page_rules)
+    page_config =
+      Cascade.page_config(ext_page_rules, emb_page_rules)
+      |> apply_page_overrides(Keyword.get(opts, :page, []))
     styled_tree = Cascade.build(dom, ext_style_rules, emb_style_rules)
 
     # 5. Layout
@@ -79,6 +86,46 @@ defmodule Press do
       {:ok, pdf_bytes} -> pdf_bytes
       {:error, reason} -> raise "failed to render PDF: #{inspect(reason)}"
     end
+  end
+
+  @named_sizes %{a4: {595.28, 841.89}, letter: {612.0, 792.0}, legal: {612.0, 1008.0}}
+
+  defp apply_page_overrides(config, []), do: config
+
+  defp apply_page_overrides(config, opts) do
+    config
+    |> override_size(Keyword.get(opts, :size), Keyword.get(opts, :landscape, false))
+    |> override_margin(Keyword.get(opts, :margin))
+  end
+
+  defp override_size(config, nil, landscape), do: maybe_landscape(config, landscape)
+
+  defp override_size(config, {w, h}, landscape) when is_number(w) and is_number(h) do
+    maybe_landscape(%{config | size: {w * 1.0, h * 1.0}}, landscape)
+  end
+
+  defp override_size(config, name, landscape) when is_atom(name) do
+    case Map.fetch(@named_sizes, name) do
+      {:ok, size} -> maybe_landscape(%{config | size: size}, landscape)
+      :error -> maybe_landscape(config, landscape)
+    end
+  end
+
+  defp maybe_landscape(config, true) do
+    {w, h} = config.size
+    %{config | size: {max(w, h), min(w, h)}}
+  end
+
+  defp maybe_landscape(config, _), do: config
+
+  defp override_margin(config, nil), do: config
+
+  defp override_margin(config, pt) when is_number(pt) do
+    %{config | margin: %{top: pt * 1.0, right: pt * 1.0, bottom: pt * 1.0, left: pt * 1.0}}
+  end
+
+  defp override_margin(config, %{} = sides) do
+    %{config | margin: Map.merge(config.margin, Map.new(sides, fn {k, v} -> {k, v * 1.0} end))}
   end
 
   defp extract_style_content(nodes) do

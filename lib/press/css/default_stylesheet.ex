@@ -3,21 +3,26 @@ defmodule Press.CSS.DefaultStylesheet do
 
   alias Press.CSS.Parser
 
+  # Mirrors the HTML user-agent stylesheet for the elements Press lays out, so
+  # a document written against a browser lands in the same place here. Sizes
+  # are relative (`em`) for the same reason they are in a browser: a document
+  # that sets `body { font-size }` expects headings to scale with it.
   @css """
   strong, b { font-weight: bold; }
   em, i { font-style: italic; }
-  th { font-weight: bold; text-align: left; }
-  h1 { font-size: 24pt; margin: 0.67em 0; }
-  h2 { font-size: 18pt; margin: 0.75em 0; }
-  h3 { font-size: 14pt; margin: 0.83em 0; }
-  h4 { font-size: 12pt; margin: 1.12em 0; }
-  h5 { font-size: 10pt; margin: 1.5em 0; }
-  h6 { font-size: 8pt; margin: 1.67em 0; }
+  h1 { font-size: 2em; margin: 0.67em 0; font-weight: bold; }
+  h2 { font-size: 1.5em; margin: 0.83em 0; font-weight: bold; }
+  h3 { font-size: 1.17em; margin: 1em 0; font-weight: bold; }
+  h4 { font-size: 1em; margin: 1.33em 0; font-weight: bold; }
+  h5 { font-size: 0.83em; margin: 1.67em 0; font-weight: bold; }
+  h6 { font-size: 0.67em; margin: 2.33em 0; font-weight: bold; }
   p { margin: 1em 0; }
-  ul, ol { list-style-position: outside; margin: 1em 0; }
+  ul, ol { list-style-position: outside; margin: 1em 0; padding-left: 40px; }
   ul { list-style-type: disc; }
   ol { list-style-type: decimal; }
-  th, td { padding: 6pt 10pt; }
+  th { font-weight: bold; text-align: center; }
+  th, td { padding: 1px; }
+  hr { margin: 0.5em 0; border-width: 1px; border-style: solid; }
   table.table-xs th, table.table-xs td { font-size: 9pt; padding: 4pt 8pt; }
   table.table-sm th, table.table-sm td { font-size: 10.5pt; padding: 6pt 10pt; }
   """

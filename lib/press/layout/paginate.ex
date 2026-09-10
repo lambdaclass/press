@@ -1,7 +1,7 @@
 defmodule Press.Layout.Paginate do
   @moduledoc false
 
-  alias Press.Layout.{Box, Page}
+  alias Press.Layout.{Box, Fragment, Page}
 
   @doc """
   Splits a laid out root box into discrete pages.
@@ -82,22 +82,15 @@ defmodule Press.Layout.Paginate do
          page_config
        ) do
     box_h = Box.outer_height(box)
+    page_empty? = current_page_boxes == []
 
-    is_break_before = get_page_break(box, :page_break_before) == :always
+    emit_page = fn boxes ->
+      build_page(boxes, page_num, header, footer, footer_y, page_config)
+    end
 
-    if is_break_before and current_page_boxes != [] do
-      page =
-        build_page(
-          current_page_boxes,
-          page_num,
-          header,
-          footer,
-          footer_y,
-          page_config
-        )
-
+    continue_on_next_page = fn queue, page ->
       do_paginate(
-        [box | rest],
+        queue,
         flow_h,
         flow_start_y,
         [],
@@ -109,78 +102,54 @@ defmodule Press.Layout.Paginate do
         footer_y,
         page_config
       )
-    else
-      if current_y + box_h <= flow_h or current_page_boxes == [] do
-        placed_box = shift_box_y(box, flow_start_y + current_y - box.y)
-        new_current_boxes = current_page_boxes ++ [placed_box]
-        new_current_y = current_y + box_h
+    end
 
-        is_break_after = get_page_break(box, :page_break_after) == :always
+    place = fn ->
+      placed_box = shift_box_y(box, flow_start_y + current_y - box.y)
+      new_current_boxes = current_page_boxes ++ [placed_box]
 
-        if is_break_after do
-          page =
-            build_page(
-              new_current_boxes,
-              page_num,
-              header,
-              footer,
-              footer_y,
-              page_config
-            )
-
-          do_paginate(
-            rest,
-            flow_h,
-            flow_start_y,
-            [],
-            0.0,
-            [page | pages_acc],
-            page_num + 1,
-            header,
-            footer,
-            footer_y,
-            page_config
-          )
-        else
-          do_paginate(
-            rest,
-            flow_h,
-            flow_start_y,
-            new_current_boxes,
-            new_current_y,
-            pages_acc,
-            page_num,
-            header,
-            footer,
-            footer_y,
-            page_config
-          )
-        end
+      if get_page_break(box, :page_break_after) == :always do
+        continue_on_next_page.(rest, emit_page.(new_current_boxes))
       else
-        page =
-          build_page(
-            current_page_boxes,
-            page_num,
-            header,
-            footer,
-            footer_y,
-            page_config
-          )
-
         do_paginate(
-          [box | rest],
+          rest,
           flow_h,
           flow_start_y,
-          [],
-          0.0,
-          [page | pages_acc],
-          page_num + 1,
+          new_current_boxes,
+          current_y + box_h,
+          pages_acc,
+          page_num,
           header,
           footer,
           footer_y,
           page_config
         )
       end
+    end
+
+    cond do
+      get_page_break(box, :page_break_before) == :always and not page_empty? ->
+        continue_on_next_page.([box | rest], emit_page.(current_page_boxes))
+
+      current_y + box_h <= flow_h ->
+        place.()
+
+      true ->
+        # Too tall for what is left. Break inside it if it has a break
+        # opportunity above the page edge, otherwise push it whole to the next
+        # page — and if the page is already empty, place it anyway rather than
+        # loop forever on a box no page can hold.
+        case Fragment.split(box, box.y + (flow_h - current_y)) do
+          {:split, head, tail} ->
+            placed_head = shift_box_y(head, flow_start_y + current_y - head.y)
+            continue_on_next_page.([tail | rest], emit_page.(current_page_boxes ++ [placed_head]))
+
+          :indivisible when page_empty? ->
+            place.()
+
+          :indivisible ->
+            continue_on_next_page.([box | rest], emit_page.(current_page_boxes))
+        end
     end
   end
 

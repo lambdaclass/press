@@ -37,17 +37,18 @@ defmodule Press.Layout.Table do
     content_origin_x = table_x + border_width.left + padding.left
     content_origin_y = table_y + border_width.top + padding.top
 
-    row_nodes = extract_rows(table_node.children)
+    tagged_rows = extract_rows(table_node.children)
+    row_nodes = Enum.map(tagged_rows, &elem(&1, 0))
 
     col_count = count_columns(row_nodes)
     column_widths = calculate_column_widths(row_nodes, col_count, table_width)
 
     {row_boxes, total_height} =
-      Enum.reduce(row_nodes, {[], 0.0}, fn row_node, {r_acc, curr_y} ->
+      Enum.reduce(tagged_rows, {[], 0.0}, fn {row_node, header?}, {r_acc, curr_y} ->
         {row_box, row_height} =
           layout_row(row_node, column_widths, content_origin_x, content_origin_y + curr_y)
 
-        {[row_box | r_acc], curr_y + row_height}
+        {[%Box{row_box | header_row: header?} | r_acc], curr_y + row_height}
       end)
 
     table_box = %Box{
@@ -74,14 +75,14 @@ defmodule Press.Layout.Table do
     {table_box, next_y, margin.bottom}
   end
 
-  defp extract_rows(children) do
+  defp extract_rows(children, in_header \\ false) do
     Enum.flat_map(children, fn
       %Node{element: %{tag: "tr"}} = tr ->
-        [tr]
+        [{tr, in_header}]
 
       %Node{element: %{tag: section}, children: section_children}
       when section in ["thead", "tbody", "tfoot"] ->
-        extract_rows(section_children)
+        extract_rows(section_children, section == "thead")
 
       _ ->
         []

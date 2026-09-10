@@ -125,7 +125,7 @@ defmodule Press.Layout.Inline do
 
   defp build_line_box(tokens, available_width, text_align) do
     line_width = Enum.reduce(tokens, 0.0, fn t, acc -> acc + t.width end)
-    line_height = Enum.reduce(tokens, 12.0, fn t, acc -> max(acc, t.line_height) end)
+    line_height = Enum.reduce(tokens, 0.0, fn t, acc -> max(acc, t.line_height) end)
 
     start_x =
       case text_align do

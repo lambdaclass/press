@@ -41,7 +41,16 @@ defmodule Press.Layout.Table do
     row_nodes = Enum.map(tagged_rows, &elem(&1, 0))
 
     col_count = count_columns(row_nodes)
-    column_widths = calculate_column_widths(row_nodes, col_count, table_width)
+    col_hints = extract_col_widths(table_node.children, table_width)
+
+    column_widths =
+      calculate_column_widths(
+        row_nodes,
+        col_count,
+        table_width,
+        col_hints,
+        computed.table_layout
+      )
 
     {row_boxes, total_height} =
       Enum.reduce(tagged_rows, {[], 0.0}, fn {row_node, header?}, {r_acc, curr_y} ->
@@ -122,9 +131,40 @@ defmodule Press.Layout.Table do
   defp is_cell_node(%Node{element: %{tag: tag}}), do: tag in ["th", "td"]
   defp is_cell_node(_), do: false
 
-  defp calculate_column_widths(_row_nodes, 0, table_width), do: [table_width]
+  # `<colgroup><col style="width: …">` sets a column's width without any cell
+  # carrying it, so the hints are collected before the cells are consulted.
+  defp extract_col_widths(children, table_width) do
+    children
+    |> Enum.flat_map(fn
+      %Node{element: %{tag: "colgroup"}, children: cols} -> cols
+      %Node{element: %{tag: "col"}} = col -> [col]
+      _ -> []
+    end)
+    |> Enum.filter(&match?(%Node{element: %{tag: "col"}}, &1))
+    |> Enum.flat_map(fn col ->
+      span = get_colspan_attr(col, "span")
 
-  defp calculate_column_widths(row_nodes, col_count, table_width) do
+      width =
+        case col.computed.width do
+          {:percent, p} -> p / 100.0 * table_width
+          n when is_number(n) -> n * 1.0
+          _ -> nil
+        end
+
+      List.duplicate(width, span)
+    end)
+  end
+
+  defp get_colspan_attr(%Node{element: %{attrs: attrs}}, name) do
+    case Integer.parse(Map.get(attrs, name, "1")) do
+      {n, _} when n > 0 -> n
+      _ -> 1
+    end
+  end
+
+  defp calculate_column_widths(_row_nodes, 0, table_width, _hints, _layout), do: [table_width]
+
+  defp calculate_column_widths(row_nodes, col_count, table_width, col_hints, table_layout) do
     explicit_widths =
       for c <- 0..(col_count - 1) do
         row_nodes
@@ -184,6 +224,23 @@ defmodule Press.Layout.Table do
 
           max(25.0, max_w + 16.0)
         end
+      end
+
+    explicit_widths =
+      explicit_widths
+      |> Enum.with_index()
+      |> Enum.map(fn {w, i} -> w || Enum.at(col_hints, i) end)
+
+    # `table-layout: fixed` takes the declared widths as final and splits what
+    # is left equally, instead of measuring any content.
+    content_weights =
+      if table_layout == :fixed do
+        Enum.map(explicit_widths, fn
+          nil -> 1.0
+          _ -> nil
+        end)
+      else
+        content_weights
       end
 
     total_explicit = explicit_widths |> Enum.reject(&is_nil/1) |> Enum.sum()

@@ -18,6 +18,13 @@ defmodule Press do
 
   - `:css` — external CSS string applied before embedded `<style>` blocks.
   - `:images` — a map of `%{src => binary_data}` for image references.
+  - `:embed_fonts` — a map of `%{font => path_or_binary}` naming font files to
+    carry inside the PDF, e.g. `%{helvetica: "…/Regular.otf", helvetica_bold:
+    "…/Bold.otf"}`. Without it the PDF asks for the 14 base fonts and the
+    reader supplies them, so the letterforms depend on the reader; with it the
+    document is self-contained and renders the same everywhere. The file has to
+    be metrically compatible with the base font it replaces, since layout was
+    already measured against the base metrics.
   - `:bold_boost` — synthesises a heavier bold by stroking the glyphs, as a
     fraction of the font size (e.g. `0.02`). The base-14 fonts stop at
     Helvetica-Bold, so this is the only way to reach the weight of a heavier
@@ -54,6 +61,7 @@ defmodule Press do
     page_config =
       Cascade.page_config(ext_page_rules, emb_page_rules)
       |> apply_page_overrides(Keyword.get(opts, :page, []))
+      |> Map.put(:embedded_fonts, load_fonts(Keyword.get(opts, :embed_fonts, %{})))
     styled_tree = Cascade.build(dom, ext_style_rules, emb_style_rules)
 
     # 5. Layout
@@ -94,6 +102,20 @@ defmodule Press do
       {:ok, pdf_bytes} -> pdf_bytes
       {:error, reason} -> raise "failed to render PDF: #{inspect(reason)}"
     end
+  end
+
+  # A font that cannot be read is skipped rather than fatal: the reader's own
+  # base font still draws the page, so a missing file degrades the letterforms
+  # instead of losing the document.
+  defp load_fonts(sources) do
+    Map.new(sources, fn {font, source} ->
+      case Press.Font.Program.load(source) do
+        {:ok, program} -> {font, program}
+        {:error, _reason} -> {font, nil}
+      end
+    end)
+    |> Enum.reject(fn {_font, program} -> is_nil(program) end)
+    |> Map.new()
   end
 
   @named_sizes %{a4: {595.28, 841.89}, letter: {612.0, 792.0}, legal: {612.0, 1008.0}}

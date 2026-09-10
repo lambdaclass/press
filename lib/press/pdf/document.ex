@@ -3,9 +3,9 @@ defmodule Press.PDF.Document do
 
   alias Press.PDF.Page
 
-  defstruct pages: []
+  defstruct pages: [], embedded_fonts: %{}
 
-  def new, do: %__MODULE__{}
+  def new(embedded_fonts \\ %{}), do: %__MODULE__{embedded_fonts: embedded_fonts}
 
   def add_page(%__MODULE__{pages: pages} = doc, width, height) do
     page = %Page{width: width, height: height, ops: []}

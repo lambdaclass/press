@@ -14,7 +14,9 @@ defmodule Press.PDF.Renderer do
     # fraction of the font size.
     boost = Map.get(page_config || %{}, :bold_boost, 0.0)
 
-    Enum.reduce(pages, Document.new(), fn %Page{} = page, doc ->
+    embedded = Map.get(page_config || %{}, :embedded_fonts, %{})
+
+    Enum.reduce(pages, Document.new(embedded), fn %Page{} = page, doc ->
       {doc_with_page, page_index} = Document.add_page(doc, page.width, page.height)
       render_boxes(page.boxes, doc_with_page, page_index, page.height, boost)
     end)

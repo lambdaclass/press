@@ -4,7 +4,7 @@ defmodule Press.PDF.Writer do
   alias Press.Image
   alias Press.PDF.{ContentStream, Document, Fonts, Syntax}
 
-  def to_binary(%Document{pages: pages}) do
+  def to_binary(%Document{pages: pages, embedded_fonts: embedded}) do
     page_count = length(pages)
     fonts = collect_fonts(pages)
     images = collect_images(pages)
@@ -14,10 +14,8 @@ defmodule Press.PDF.Writer do
     font_resource_names =
       fonts |> Enum.with_index(1) |> Map.new(fn {font, i} -> {font, "/F#{i}"} end)
 
-    font_obj_numbers =
-      fonts |> Enum.with_index(first_free_obj_num) |> Map.new()
-
-    after_fonts_obj_num = first_free_obj_num + length(fonts)
+    {font_obj_numbers, font_objects, after_fonts_obj_num} =
+      build_font_objects(fonts, embedded || %{}, first_free_obj_num)
 
     {image_resource_names, image_obj_numbers, _smask_obj_numbers, image_objects} =
       build_image_objects(images, after_fonts_obj_num)
@@ -58,18 +56,64 @@ defmodule Press.PDF.Writer do
     kids = Enum.map_join(page_obj_numbers, " ", &"#{&1} 0 R")
     pages_obj = {2, "<< /Type /Pages /Kids [#{kids}] /Count #{page_count} >>"}
 
-    font_objects =
-      for font <- fonts do
-        {font_obj_numbers[font],
-         "<< /Type /Font /Subtype /Type1 /BaseFont /#{Fonts.base_font_name(font)} " <>
-           "/Encoding /WinAnsiEncoding >>"}
-      end
-
     objects =
       ([catalog, pages_obj] ++ page_and_content_objects ++ font_objects ++ image_objects)
       |> Enum.sort_by(&elem(&1, 0))
 
     assemble("%PDF-1.4\n", objects)
+  end
+
+  # A font is one object when the reader supplies it (the base 14) and three
+  # when the document carries it: the font, its descriptor, and the program.
+  defp build_font_objects(fonts, embedded, start_obj_num) do
+    Enum.reduce(fonts, {%{}, [], start_obj_num}, fn font, {numbers, objects, next} ->
+      case Map.fetch(embedded, font) do
+        {:ok, %Press.Font.Program{} = program} ->
+          {font_obj, descriptor_obj, file_obj} = {next, next + 1, next + 2}
+
+          new_objects = [
+            {font_obj, embedded_font_dict(font, program, descriptor_obj)},
+            {descriptor_obj, font_descriptor_dict(program, file_obj)},
+            {file_obj, font_file_stream(program)}
+          ]
+
+          {Map.put(numbers, font, font_obj), objects ++ new_objects, next + 3}
+
+        :error ->
+          body =
+            "<< /Type /Font /Subtype /Type1 /BaseFont /#{Fonts.base_font_name(font)} " <>
+              "/Encoding /WinAnsiEncoding >>"
+
+          {Map.put(numbers, font, next), objects ++ [{next, body}], next + 1}
+      end
+    end)
+  end
+
+  defp embedded_font_dict(font, program, descriptor_obj) do
+    widths = Fonts.winansi_widths(font) |> Enum.map_join(" ", &to_string/1)
+
+    "<< /Type /Font /Subtype /Type1 /BaseFont /#{program.name} " <>
+      "/FirstChar 32 /LastChar 255 /Widths [#{widths}] " <>
+      "/Encoding /WinAnsiEncoding /FontDescriptor #{descriptor_obj} 0 R >>"
+  end
+
+  defp font_descriptor_dict(program, file_obj) do
+    {x_min, y_min, x_max, y_max} = program.bbox
+
+    "<< /Type /FontDescriptor /FontName /#{program.name} /Flags #{program.flags} " <>
+      "/FontBBox [#{x_min} #{y_min} #{x_max} #{y_max}] " <>
+      "/ItalicAngle #{Syntax.number(program.italic_angle)} /Ascent #{program.ascent} " <>
+      "/Descent #{program.descent} /CapHeight #{program.cap_height} /StemV #{program.stem_v} " <>
+      "/#{program.file_key} #{file_obj} 0 R >>"
+  end
+
+  defp font_file_stream(%Press.Font.Program{} = program) do
+    compressed = :zlib.compress(program.data)
+
+    subtype = if program.subtype, do: "/Subtype /#{program.subtype} ", else: ""
+
+    "<< #{subtype}/Length #{byte_size(compressed)} /Length1 #{byte_size(program.data)} " <>
+      "/Filter /FlateDecode >>\nstream\n" <> compressed <> "\nendstream"
   end
 
   defp collect_fonts(pages) do

@@ -23,9 +23,13 @@ defmodule Press.Style.Cascade do
     text_transform: :none,
     list_style_type: :disc,
     list_style_position: :outside,
+    letter_spacing: 0.0,
     page_break_before: :auto,
     page_break_after: :auto,
-    display: nil
+    display: nil,
+    flex_direction: :row,
+    justify_content: :"flex-start",
+    align_items: :stretch
   }
 
   @initial_font_size 12.0
@@ -45,7 +49,10 @@ defmodule Press.Style.Cascade do
   @keyword_non_inheritable [
     {:page_break_before, "page-break-before"},
     {:page_break_after, "page-break-after"},
-    {:display, "display"}
+    {:display, "display"},
+    {:flex_direction, "flex-direction"},
+    {:justify_content, "justify-content"},
+    {:align_items, "align-items"}
   ]
 
   @doc """
@@ -102,6 +109,12 @@ defmodule Press.Style.Cascade do
     font_size = resolve_font_size(specified, context)
     line_height_specified = Map.get(specified, "line-height", context.line_height_specified)
     color = Map.get(specified, "color", context.inherited.color)
+
+    letter_spacing =
+      case Map.get(specified, "letter-spacing") do
+        nil -> Map.get(context.inherited, :letter_spacing, 0.0)
+        term -> resolve_length(term, font_size, context.root_font_size)
+      end
 
     keyword_computed =
       Enum.reduce(@keyword_inheritable, %{}, fn {key, prop}, acc ->
@@ -163,6 +176,33 @@ defmodule Press.Style.Cascade do
         resolve_dimension(Map.get(specified, "height"), font_size, context.root_font_size)
       )
       |> Map.put(:background_color, Map.get(specified, "background-color"))
+      |> Map.put(
+        :min_width,
+        resolve_dimension(Map.get(specified, "min-width"), font_size, context.root_font_size)
+      )
+      |> Map.put(
+        :max_width,
+        resolve_dimension(Map.get(specified, "max-width"), font_size, context.root_font_size)
+      )
+      |> Map.put(
+        :min_height,
+        resolve_dimension(Map.get(specified, "min-height"), font_size, context.root_font_size)
+      )
+      |> Map.put(
+        :max_height,
+        resolve_dimension(Map.get(specified, "max-height"), font_size, context.root_font_size)
+      )
+      |> Map.put(
+        :row_gap,
+        resolve_gap(Map.get(specified, "row-gap"), font_size, context.root_font_size)
+      )
+      |> Map.put(
+        :column_gap,
+        resolve_gap(Map.get(specified, "column-gap"), font_size, context.root_font_size)
+      )
+      |> Map.put(:grid_template_columns, Map.get(specified, "grid-template-columns"))
+      |> Map.put(:flex_grow, Map.get(specified, "flex-grow", 0.0))
+      |> Map.put(:letter_spacing, letter_spacing)
       |> then(fn c ->
         Enum.reduce(@keyword_non_inheritable, c, fn {key, prop}, acc ->
           Map.put(acc, key, Map.get(specified, prop, Map.fetch!(@initial, key)))
@@ -170,7 +210,11 @@ defmodule Press.Style.Cascade do
       end)
 
     inherited_keys = Enum.map(@keyword_inheritable, fn {key, _prop} -> key end)
-    child_inherited = computed |> Map.take(inherited_keys) |> Map.put(:color, color)
+    child_inherited =
+      computed
+      |> Map.take(inherited_keys)
+      |> Map.put(:color, color)
+      |> Map.put(:letter_spacing, letter_spacing)
 
     child_context = %{
       ancestors: [element | context.ancestors],
@@ -222,6 +266,9 @@ defmodule Press.Style.Cascade do
   defp resolve_side(nil, _font_size, _root), do: 0.0
   defp resolve_side({:length, n, :percent}, _font_size, _root), do: {:percent, n}
   defp resolve_side(term, font_size, root), do: resolve_absolute_em_rem(term, font_size, root)
+
+  defp resolve_gap(nil, _font_size, _root), do: 0.0
+  defp resolve_gap(term, font_size, root), do: resolve_length(term, font_size, root)
 
   defp resolve_dimension(nil, _font_size, _root), do: :auto
   defp resolve_dimension({:length, n, :percent}, _font_size, _root), do: {:percent, n}

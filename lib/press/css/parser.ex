@@ -25,13 +25,27 @@ defmodule Press.CSS.Parser do
   }
 
   @color_properties ~w(color background-color)
-  @length_properties ~w(font-size width height border-spacing)
+  @length_properties ~w(font-size width height border-spacing
+                        min-width max-width min-height max-height
+                        column-gap row-gap letter-spacing)
 
   @keyword_properties %{
     "font-weight" => [:normal, :bold],
     "display" => [:block, :inline, :"inline-block", :flex, :grid, :table, :none, :"list-item",
                   :"inline-flex", :"inline-grid", :"table-row", :"table-cell", :"flex-root"],
     "font-style" => [:normal, :italic],
+    "flex-direction" => [:row, :column, :"row-reverse", :"column-reverse"],
+    "justify-content" => [
+      :"flex-start",
+      :"flex-end",
+      :center,
+      :"space-between",
+      :"space-around",
+      :"space-evenly",
+      :start,
+      :end
+    ],
+    "align-items" => [:stretch, :"flex-start", :"flex-end", :center, :baseline, :start, :end],
     "text-align" => [:left, :right, :center, :justify],
     "vertical-align" => [:top, :middle, :bottom, :baseline],
     "text-transform" => [:uppercase, :lowercase, :capitalize, :none],
@@ -42,6 +56,37 @@ defmodule Press.CSS.Parser do
     "page-break-before" => [:auto, :always],
     "page-break-after" => [:auto, :always]
   }
+
+  defp parse_track_list(value) do
+    value
+    |> expand_repeat()
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.map(&parse_track/1)
+    |> then(fn tracks -> if Enum.any?(tracks, &is_nil/1), do: [], else: tracks end)
+  end
+
+  defp expand_repeat(value) do
+    Regex.replace(~r/repeat\(\s*(\d+)\s*,\s*([^)]*)\)/, value, fn _, count, tracks ->
+      List.duplicate(String.trim(tracks), String.to_integer(count)) |> Enum.join(" ")
+    end)
+  end
+
+  defp parse_track("auto"), do: :auto
+  defp parse_track("min-content"), do: :auto
+  defp parse_track("max-content"), do: :auto
+
+  defp parse_track(track) do
+    case Regex.run(~r/^([\d.]+)fr$/, track) do
+      [_, n] ->
+        {:fr, elem(Float.parse(n), 0)}
+
+      nil ->
+        case Value.parse_length(track) do
+          {:ok, length} -> {:track, length}
+          :error -> nil
+        end
+    end
+  end
 
   defp normalize_keyword("font-weight", value) do
     case Integer.parse(String.trim(value)) do
@@ -514,6 +559,48 @@ defmodule Press.CSS.Parser do
       end)
 
     {:ok, %{"font-family" => alias_name}}
+  end
+
+  defp parse_declaration("gap", value) do
+    case String.split(value, ~r/\s+/, trim: true) do
+      [one] ->
+        with {:ok, v} <- Value.parse_length(one),
+             do: {:ok, %{"row-gap" => v, "column-gap" => v}}
+
+      [row, col | _] ->
+        with {:ok, r} <- Value.parse_length(row),
+             {:ok, c} <- Value.parse_length(col),
+             do: {:ok, %{"row-gap" => r, "column-gap" => c}}
+
+      _ ->
+        :error
+    end
+  end
+
+  defp parse_declaration("grid-gap", value), do: parse_declaration("gap", value)
+
+  defp parse_declaration("grid-template-columns", value) do
+    case parse_track_list(value) do
+      [] -> :error
+      tracks -> {:ok, %{"grid-template-columns" => tracks}}
+    end
+  end
+
+  # Only the grow factor is read: `flex: 1`, `flex: 1 1 0%` and `flex-grow: 2`
+  # all collapse to a share of the leftover main-axis space, which is the whole
+  # of what the shorthand contributes at this level of support.
+  defp parse_declaration("flex", value) do
+    case Float.parse(String.trim(value)) do
+      {n, _} -> {:ok, %{"flex-grow" => n}}
+      :error -> {:ok, %{"flex-grow" => if(String.trim(value) == "none", do: 0.0, else: 1.0)}}
+    end
+  end
+
+  defp parse_declaration("flex-grow", value) do
+    case Float.parse(String.trim(value)) do
+      {n, _} -> {:ok, %{"flex-grow" => n}}
+      :error -> :error
+    end
   end
 
   defp parse_declaration("line-height", value) do

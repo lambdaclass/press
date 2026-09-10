@@ -16,6 +16,12 @@ defmodule Press.Layout.Block do
       node.element.tag == "table" ->
         Press.Layout.Table.layout_table(node, containing_width, container_x, start_y)
 
+      Press.Layout.FlexGrid.grid?(node) ->
+        Press.Layout.FlexGrid.layout_grid(node, containing_width, container_x, start_y, images)
+
+      Press.Layout.FlexGrid.flex?(node) ->
+        Press.Layout.FlexGrid.layout_flex(node, containing_width, container_x, start_y, images)
+
       Press.Layout.Grid.grid?(node) ->
         Press.Layout.Grid.layout_grid(node, containing_width, container_x, start_y, images)
 

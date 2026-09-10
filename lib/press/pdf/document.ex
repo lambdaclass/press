@@ -17,9 +17,10 @@ defmodule Press.PDF.Document do
     font = Keyword.get(opts, :font, :helvetica)
     size = Keyword.get(opts, :size, 12)
     color = Keyword.get(opts, :color, {0, 0, 0})
+    tracking = Keyword.get(opts, :letter_spacing, 0.0)
 
     update_page(doc, page_index, fn page ->
-      %{page | ops: page.ops ++ [{:text, x, y, font, size, color, text}]}
+      %{page | ops: page.ops ++ [{:text, x, y, font, size, color, text, tracking}]}
     end)
   end
 

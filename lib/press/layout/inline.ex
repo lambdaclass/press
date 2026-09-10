@@ -38,12 +38,13 @@ defmodule Press.Layout.Inline do
     font_size = computed.font_size
     line_height = computed.line_height
     color = computed.color
+    tracking = Map.get(computed, :letter_spacing, 0.0)
 
     Regex.scan(~r/\S+|\s+/, content)
     |> List.flatten()
     |> Enum.map(fn token ->
       if String.trim(token) == "" do
-        space_width = Metrics.text_width(font, " ", font_size)
+        space_width = Metrics.text_width(font, " ", font_size, tracking)
 
         %{
           type: :space,
@@ -52,10 +53,11 @@ defmodule Press.Layout.Inline do
           font_size: font_size,
           line_height: line_height,
           color: color,
+          letter_spacing: tracking,
           width: space_width
         }
       else
-        word_width = Metrics.text_width(font, token, font_size)
+        word_width = Metrics.text_width(font, token, font_size, tracking)
 
         %{
           type: :word,
@@ -64,6 +66,7 @@ defmodule Press.Layout.Inline do
           font_size: font_size,
           line_height: line_height,
           color: color,
+          letter_spacing: tracking,
           width: word_width
         }
       end
@@ -142,7 +145,8 @@ defmodule Press.Layout.Inline do
           text: token.text,
           font: token.font,
           font_size: token.font_size,
-          color: token.color
+          color: token.color,
+          letter_spacing: token.letter_spacing
         }
 
         {[box | acc], curr_x + token.width}

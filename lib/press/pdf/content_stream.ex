@@ -8,7 +8,15 @@ defmodule Press.PDF.ContentStream do
   end
 
   defp render_op(
-         {:text, x, y, font, size, {r, g, b}, text},
+         {:text, x, y, font, size, color, text},
+         font_resource_names,
+         image_resource_names
+       ) do
+    render_op({:text, x, y, font, size, color, text, 0.0}, font_resource_names, image_resource_names)
+  end
+
+  defp render_op(
+         {:text, x, y, font, size, {r, g, b}, text, tracking},
          font_resource_names,
          _image_resource_names
        ) do
@@ -20,6 +28,7 @@ defmodule Press.PDF.ContentStream do
         "#{Syntax.number(r)} #{Syntax.number(g)} #{Syntax.number(b)} rg",
         "BT",
         "#{resource} #{Syntax.number(size)} Tf",
+        "#{Syntax.number(tracking)} Tc",
         "#{Syntax.number(x)} #{Syntax.number(y)} Td",
         "(#{text |> to_winansi() |> Syntax.escape_string()}) Tj",
         "ET",

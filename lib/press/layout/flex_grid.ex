@@ -357,7 +357,12 @@ defmodule Press.Layout.FlexGrid do
 
   def max_content_width(%Text{content: content, computed: computed}) do
     font = Metrics.font_for(computed.font_family, computed.font_weight, computed.font_style)
-    Metrics.text_width(font, String.trim(content), computed.font_size)
+    Metrics.text_width(
+      font,
+      String.trim(content),
+      computed.font_size,
+      Map.get(computed, :letter_spacing, 0.0)
+    )
   end
 
   def max_content_width(%Node{} = node) do

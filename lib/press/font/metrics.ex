@@ -50,14 +50,15 @@ defmodule Press.Font.Metrics do
   @doc """
   Computes total text width in points.
   """
-  def text_width(_font, "", _font_size), do: 0.0
+  def text_width(font, text, font_size, letter_spacing \\ 0.0)
 
-  def text_width(font, text, font_size) when is_binary(text) and is_number(font_size) do
-    total_units =
-      text
-      |> String.to_charlist()
-      |> Enum.reduce(0, fn cp, acc -> acc + char_width(font, cp) end)
+  def text_width(_font, "", _font_size, _letter_spacing), do: 0.0
 
-    total_units * font_size / 1000.0
+  def text_width(font, text, font_size, letter_spacing)
+      when is_binary(text) and is_number(font_size) do
+    chars = String.to_charlist(text)
+    total_units = Enum.reduce(chars, 0, fn cp, acc -> acc + char_width(font, cp) end)
+
+    total_units * font_size / 1000.0 + length(chars) * letter_spacing
   end
 end

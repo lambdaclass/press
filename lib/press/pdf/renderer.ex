@@ -124,7 +124,8 @@ defmodule Press.PDF.Renderer do
     Document.draw_text(doc, page_idx, pdf_x, pdf_y, text,
       font: font || :helvetica,
       size: size || 12.0,
-      color: color || {0, 0, 0}
+      color: color || {0, 0, 0},
+      letter_spacing: box.letter_spacing || 0.0
     )
   end
 

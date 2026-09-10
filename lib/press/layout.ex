@@ -103,6 +103,9 @@ defmodule Press.Layout do
       y: origin_y,
       width: content_width,
       height: total_height,
+      # The wrapper's bottom edge is not a box the paginator walks, so it
+      # travels here: every page has to stop that much short of its margin.
+      padding: %{top: 0.0, right: 0.0, bottom: inset.bottom, left: 0.0},
       children: Enum.reverse(top_boxes)
     }
   end
@@ -110,7 +113,7 @@ defmodule Press.Layout do
   @wrapper_tags ["html", "body"]
 
   defp wrapper_inset(nodes, containing_width) do
-    Enum.reduce(nodes, %{left: 0.0, right: 0.0, top: 0.0}, fn node, acc ->
+    Enum.reduce(nodes, %{left: 0.0, right: 0.0, top: 0.0, bottom: 0.0}, fn node, acc ->
       case node do
         %Node{element: %{tag: tag}, children: children} when tag in @wrapper_tags ->
           own = box_inset(node, containing_width)
@@ -119,7 +122,8 @@ defmodule Press.Layout do
           %{
             left: acc.left + own.left + inner.left,
             right: acc.right + own.right + inner.right,
-            top: acc.top + own.top + inner.top
+            top: acc.top + own.top + inner.top,
+            bottom: acc.bottom + own.bottom + inner.bottom
           }
 
         _ ->
@@ -141,7 +145,8 @@ defmodule Press.Layout do
     %{
       left: side.(:margin, :left) + side.(:border_width, :left) + side.(:padding, :left),
       right: side.(:margin, :right) + side.(:border_width, :right) + side.(:padding, :right),
-      top: side.(:margin, :top) + side.(:border_width, :top) + side.(:padding, :top)
+      top: side.(:margin, :top) + side.(:border_width, :top) + side.(:padding, :top),
+      bottom: side.(:margin, :bottom) + side.(:border_width, :bottom) + side.(:padding, :bottom)
     }
   end
 

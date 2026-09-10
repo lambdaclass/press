@@ -6,9 +6,10 @@ defmodule Press.Layout.Paginate do
   @doc """
   Splits a laid out root box into discrete pages.
   """
-  def paginate(%Box{children: children}, page_config) do
+  def paginate(%Box{children: children} = root, page_config) do
     {_page_width, page_height} = page_config.size
     margin = page_config.margin
+    wrapper_bottom = root.padding.bottom
 
     header_box = Enum.find(children, &(&1.tag == "header"))
     footer_box = Enum.find(children, &(&1.tag == "footer"))
@@ -16,7 +17,7 @@ defmodule Press.Layout.Paginate do
     header_h = if header_box, do: Box.outer_height(header_box), else: 0.0
     footer_h = if footer_box, do: Box.outer_height(footer_box), else: 0.0
 
-    usable_height = max(10.0, page_height - margin.top - margin.bottom)
+    usable_height = max(10.0, page_height - margin.top - margin.bottom - wrapper_bottom)
     flow_height = max(10.0, usable_height - header_h - footer_h)
     flow_start_y = margin.top + header_h
     footer_y = page_height - margin.bottom - footer_h

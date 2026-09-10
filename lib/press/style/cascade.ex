@@ -68,6 +68,7 @@ defmodule Press.Style.Cascade do
 
     root_context = %{
       ancestors: [],
+      path: [],
       inherited: @initial,
       font_size: @initial_font_size,
       line_height_specified: @initial_line_height,
@@ -80,10 +81,24 @@ defmodule Press.Style.Cascade do
   defp tag_origin(rules, origin), do: Enum.map(rules, &{origin, &1})
 
   defp build_nodes(nodes, tagged_rules, context) do
-    Enum.map(nodes, &build_node(&1, tagged_rules, context))
+    siblings = Enum.filter(nodes, &match?(%HTML.Element{}, &1))
+
+    {built, _} =
+      Enum.map_reduce(nodes, 0, fn node, element_index ->
+        case node do
+          %HTML.Element{} ->
+            self_ctx = %{element: node, index: element_index, siblings: siblings}
+            {build_node(node, tagged_rules, context, self_ctx), element_index + 1}
+
+          _ ->
+            {build_node(node, tagged_rules, context, nil), element_index}
+        end
+      end)
+
+    built
   end
 
-  defp build_node(%HTML.Text{content: content}, _tagged_rules, context) do
+  defp build_node(%HTML.Text{content: content}, _tagged_rules, context, _self_ctx) do
     transformed_content =
       case Map.get(context.inherited, :text_transform, :none) do
         :uppercase -> String.upcase(content)
@@ -103,8 +118,9 @@ defmodule Press.Style.Cascade do
     %Text{content: transformed_content, computed: computed}
   end
 
-  defp build_node(%HTML.Element{} = element, tagged_rules, context) do
-    specified = collect_specified(tagged_rules, element, context.ancestors)
+  defp build_node(%HTML.Element{} = element, tagged_rules, context, self_ctx) do
+    path = [self_ctx | context.path]
+    specified = collect_specified(tagged_rules, element, path)
 
     font_size = resolve_font_size(specified, context)
     line_height_specified = Map.get(specified, "line-height", context.line_height_specified)
@@ -218,6 +234,7 @@ defmodule Press.Style.Cascade do
 
     child_context = %{
       ancestors: [element | context.ancestors],
+      path: path,
       inherited: child_inherited,
       font_size: font_size,
       line_height_specified: line_height_specified,
@@ -231,11 +248,11 @@ defmodule Press.Style.Cascade do
     }
   end
 
-  defp collect_specified(tagged_rules, element, ancestors) do
+  defp collect_specified(tagged_rules, element, path) do
     from_rules =
       tagged_rules
       |> Enum.filter(fn {_origin, rule} ->
-        Selector.matches?(rule.selector, element, ancestors)
+        Selector.matches?(rule.selector, path)
       end)
       |> Enum.sort_by(fn {origin, rule} -> {origin, rule.specificity, rule.source_index} end)
       |> Enum.reduce(%{}, fn {_origin, rule}, acc -> Map.merge(acc, rule.declarations) end)

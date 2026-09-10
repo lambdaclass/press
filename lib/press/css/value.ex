@@ -62,7 +62,7 @@ defmodule Press.CSS.Value do
     "whitesmoke" => "F5F5F5"
   }
 
-  @length_regex ~r/^(-?\d+(?:\.\d+)?)(mm|cm|in|pt|px|em|rem|%)$/
+  @length_regex ~r/^(-?\d+(?:\.\d+)?)(mm|cm|in|pt|px|em|rem|ch|ex|%)$/
   @zero_regex ~r/^0(?:\.0+)?$/
   @rgb_regex ~r/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/
   @multiplier_regex ~r/^-?\d+(?:\.\d+)?$/

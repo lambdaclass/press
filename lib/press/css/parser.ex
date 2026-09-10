@@ -495,14 +495,14 @@ defmodule Press.CSS.Parser do
     end
   end
 
-  defp parse_declaration("border", value), do: Shorthand.expand_border(value)
+  defp do_parse_declaration("border", value), do: Shorthand.expand_border(value)
 
-  defp parse_declaration("border-top", value), do: expand_directional_border("top", value)
-  defp parse_declaration("border-right", value), do: expand_directional_border("right", value)
-  defp parse_declaration("border-bottom", value), do: expand_directional_border("bottom", value)
-  defp parse_declaration("border-left", value), do: expand_directional_border("left", value)
+  defp do_parse_declaration("border-top", value), do: expand_directional_border("top", value)
+  defp do_parse_declaration("border-right", value), do: expand_directional_border("right", value)
+  defp do_parse_declaration("border-bottom", value), do: expand_directional_border("bottom", value)
+  defp do_parse_declaration("border-left", value), do: expand_directional_border("left", value)
 
-  defp parse_declaration("border-style", value) do
+  defp do_parse_declaration("border-style", value) do
     # Not in @box_shorthand_properties: a closure (as opposed to a
     # remote function capture like &Value.parse_length/1) can't be
     # stored in a module attribute — Elixir can't escape it into the
@@ -511,43 +511,43 @@ defmodule Press.CSS.Parser do
     Shorthand.expand_box("border-style", value, fn v -> Value.parse_keyword(v, [:solid]) end)
   end
 
-  defp parse_declaration("padding-inline", value),
+  defp do_parse_declaration("padding-inline", value),
     do: expand_logical_box("padding", "left", "right", value)
 
-  defp parse_declaration("padding-block", value),
+  defp do_parse_declaration("padding-block", value),
     do: expand_logical_box("padding", "top", "bottom", value)
 
-  defp parse_declaration("margin-inline", value),
+  defp do_parse_declaration("margin-inline", value),
     do: expand_logical_box("margin", "left", "right", value)
 
-  defp parse_declaration("margin-block", value),
+  defp do_parse_declaration("margin-block", value),
     do: expand_logical_box("margin", "top", "bottom", value)
 
-  defp parse_declaration("padding-inline-start", value),
+  defp do_parse_declaration("padding-inline-start", value),
     do: parse_single_side("padding-left", value)
 
-  defp parse_declaration("padding-inline-end", value),
+  defp do_parse_declaration("padding-inline-end", value),
     do: parse_single_side("padding-right", value)
 
-  defp parse_declaration("padding-block-start", value),
+  defp do_parse_declaration("padding-block-start", value),
     do: parse_single_side("padding-top", value)
 
-  defp parse_declaration("padding-block-end", value),
+  defp do_parse_declaration("padding-block-end", value),
     do: parse_single_side("padding-bottom", value)
 
-  defp parse_declaration("margin-inline-start", value),
+  defp do_parse_declaration("margin-inline-start", value),
     do: parse_single_side("margin-left", value)
 
-  defp parse_declaration("margin-inline-end", value),
+  defp do_parse_declaration("margin-inline-end", value),
     do: parse_single_side("margin-right", value)
 
-  defp parse_declaration("margin-block-start", value),
+  defp do_parse_declaration("margin-block-start", value),
     do: parse_single_side("margin-top", value)
 
-  defp parse_declaration("margin-block-end", value),
+  defp do_parse_declaration("margin-block-end", value),
     do: parse_single_side("margin-bottom", value)
 
-  defp parse_declaration("font-family", value) do
+  defp do_parse_declaration("font-family", value) do
     alias_name =
       value
       |> String.split(",")
@@ -561,7 +561,27 @@ defmodule Press.CSS.Parser do
     {:ok, %{"font-family" => alias_name}}
   end
 
-  defp parse_declaration("gap", value) do
+  # Front door: a value still holding `var()` after the Tailwind-token
+  # rewrites cannot be resolved without the custom properties in scope, so it
+  # is parked raw under a namespaced key for `Press.Style.Cascade` to finish.
+  defp parse_declaration(property, value) do
+    cond do
+      String.starts_with?(property, "--") ->
+        do_parse_declaration(property, value)
+
+      String.contains?(value, "var(") ->
+        {:ok, %{"__var__" <> property => {:deferred, property, value}}}
+
+      true ->
+        do_parse_declaration(property, value)
+    end
+  end
+
+  defp do_parse_declaration("--" <> _ = property, value) do
+    {:ok, %{property => {:custom_property, String.trim(value)}}}
+  end
+
+  defp do_parse_declaration("gap", value) do
     case String.split(value, ~r/\s+/, trim: true) do
       [one] ->
         with {:ok, v} <- Value.parse_length(one),
@@ -577,9 +597,9 @@ defmodule Press.CSS.Parser do
     end
   end
 
-  defp parse_declaration("grid-gap", value), do: parse_declaration("gap", value)
+  defp do_parse_declaration("grid-gap", value), do: parse_declaration("gap", value)
 
-  defp parse_declaration("grid-template-columns", value) do
+  defp do_parse_declaration("grid-template-columns", value) do
     case parse_track_list(value) do
       [] -> :error
       tracks -> {:ok, %{"grid-template-columns" => tracks}}
@@ -589,25 +609,25 @@ defmodule Press.CSS.Parser do
   # Only the grow factor is read: `flex: 1`, `flex: 1 1 0%` and `flex-grow: 2`
   # all collapse to a share of the leftover main-axis space, which is the whole
   # of what the shorthand contributes at this level of support.
-  defp parse_declaration("flex", value) do
+  defp do_parse_declaration("flex", value) do
     case Float.parse(String.trim(value)) do
       {n, _} -> {:ok, %{"flex-grow" => n}}
       :error -> {:ok, %{"flex-grow" => if(String.trim(value) == "none", do: 0.0, else: 1.0)}}
     end
   end
 
-  defp parse_declaration("flex-grow", value) do
+  defp do_parse_declaration("flex-grow", value) do
     case Float.parse(String.trim(value)) do
       {n, _} -> {:ok, %{"flex-grow" => n}}
       :error -> :error
     end
   end
 
-  defp parse_declaration("line-height", value) do
+  defp do_parse_declaration("line-height", value) do
     with {:ok, v} <- Value.parse_line_height(value), do: {:ok, %{"line-height" => v}}
   end
 
-  defp parse_declaration(property, value) do
+  defp do_parse_declaration(property, value) do
     cond do
       parse_fun = Map.get(@box_shorthand_properties, property) ->
         Shorthand.expand_box(property, value, parse_fun)

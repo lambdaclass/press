@@ -3,7 +3,7 @@ defmodule Press.CSS.Selector do
 
   @interactive ~r/:(?:hover|focus|active|focus-within|focus-visible|visited|target)\b/
 
-  @structural ~r/:(first-child|last-child|only-child|first-of-type|last-of-type|only-of-type|nth-child\(([^)]*)\)|nth-of-type\(([^)]*)\))/
+  @structural ~r/:(root|first-child|last-child|only-child|first-of-type|last-of-type|only-of-type|nth-child\(([^)]*)\)|nth-of-type\(([^)]*)\))/
 
   @doc """
   Parses a selector into a list of compounds, outermost first. Every compound
@@ -247,6 +247,8 @@ defmodule Press.CSS.Selector do
   end
 
   defp pseudos_match?(_compound, _ctx), do: true
+
+  defp pseudo_matches?(:root, %{element: element}), do: element.tag == "html"
 
   defp pseudo_matches?(:first_child, %{index: i}), do: i == 0
 

@@ -69,6 +69,7 @@ defmodule Press.Style.Cascade do
     root_context = %{
       ancestors: [],
       path: [],
+      custom_properties: %{},
       inherited: @initial,
       font_size: @initial_font_size,
       line_height_specified: @initial_line_height,
@@ -120,7 +121,12 @@ defmodule Press.Style.Cascade do
 
   defp build_node(%HTML.Element{} = element, tagged_rules, context, self_ctx) do
     path = [self_ctx | context.path]
-    specified = collect_specified(tagged_rules, element, path)
+    raw_specified = collect_specified(tagged_rules, element, path)
+
+    custom_properties =
+      Map.merge(context.custom_properties, extract_custom_properties(raw_specified))
+
+    specified = resolve_deferred(raw_specified, custom_properties)
 
     font_size = resolve_font_size(specified, context)
     line_height_specified = Map.get(specified, "line-height", context.line_height_specified)
@@ -235,6 +241,7 @@ defmodule Press.Style.Cascade do
     child_context = %{
       ancestors: [element | context.ancestors],
       path: path,
+      custom_properties: custom_properties,
       inherited: child_inherited,
       font_size: font_size,
       line_height_specified: line_height_specified,
@@ -261,6 +268,55 @@ defmodule Press.Style.Cascade do
       nil -> from_rules
       style_str -> Map.merge(from_rules, Press.CSS.Parser.parse_declarations(style_str))
     end
+  end
+
+  defp extract_custom_properties(specified) do
+    for {"--" <> _ = name, {:custom_property, value}} <- specified, into: %{} do
+      {name, value}
+    end
+  end
+
+  # A value holding `var()` was parked raw by the parser. Substitute from the
+  # custom properties in scope and parse it now; an unresolvable reference
+  # drops the declaration, as it does in a browser.
+  defp resolve_deferred(specified, custom_properties) do
+    {deferred, plain} =
+      Enum.split_with(specified, fn
+        {"__var__" <> _, {:deferred, _property, _value}} -> true
+        _ -> false
+      end)
+
+    resolved =
+      Enum.reduce(deferred, %{}, fn {_key, {:deferred, property, raw}}, acc ->
+        case substitute_vars(raw, custom_properties) do
+          :error ->
+            acc
+
+          value ->
+            Map.merge(acc, Press.CSS.Parser.parse_declarations("#{property}: #{value}"))
+        end
+      end)
+
+    plain
+    |> Enum.reject(fn {name, _v} -> String.starts_with?(name, "--") end)
+    |> Map.new()
+    |> Map.merge(resolved)
+  end
+
+  defp substitute_vars(value, custom_properties) do
+    Regex.replace(~r/var\(\s*(--[A-Za-z0-9_-]+)\s*(?:,\s*([^()]*))?\)/, value, fn _whole,
+                                                                                  name,
+                                                                                  fallback ->
+      Map.get(custom_properties, name) || String.trim(fallback || "") 
+    end)
+    |> then(fn substituted ->
+      if String.contains?(substituted, "var(") or String.match?(substituted, ~r/(^|\s)\s*$/) and
+           String.trim(substituted) == "" do
+        :error
+      else
+        substituted
+      end
+    end)
   end
 
   defp resolve_font_size(specified, context) do
@@ -296,6 +352,8 @@ defmodule Press.Style.Cascade do
   defp resolve_length({:line_height, :multiplier, n}, font_size, _root), do: n * font_size
   defp resolve_length(term, font_size, root), do: resolve_absolute_em_rem(term, font_size, root)
 
+  defp resolve_absolute_em_rem({:length, n, :ch}, font_size, _fs), do: n * font_size * 0.5
+  defp resolve_absolute_em_rem({:length, n, :ex}, font_size, _fs), do: n * font_size * 0.5
   defp resolve_absolute_em_rem({:length, n, :em}, font_size, _root), do: n * font_size
   defp resolve_absolute_em_rem({:length, n, :rem}, _font_size, root), do: n * root
   defp resolve_absolute_em_rem({:length, n, :mm}, _fs, _r), do: n * 72.0 / 25.4

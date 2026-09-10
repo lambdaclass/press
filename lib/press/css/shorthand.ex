@@ -36,10 +36,22 @@ defmodule Press.CSS.Shorthand do
   @sides ~w(top right bottom left)
 
   def expand_border(raw_value) do
-    case raw_value |> String.split() |> Enum.reduce({:ok, %{}}, &expand_border_part/2) do
-      {:ok, parts} -> {:ok, fan_out_to_sides(parts)}
-      :error -> :error
+    if removes_border?(raw_value) do
+      # `border: none` and `border: 0` are how a stylesheet takes back a border
+      # it inherited from the user-agent sheet. Dropping the declaration
+      # instead leaves that border standing.
+      {:ok, fan_out_to_sides(%{"border-width" => {:length, 0, :pt}, "border-style" => :none})}
+    else
+      case raw_value |> String.split() |> Enum.reduce({:ok, %{}}, &expand_border_part/2) do
+        {:ok, parts} -> {:ok, fan_out_to_sides(parts)}
+        :error -> :error
+      end
     end
+  end
+
+  defp removes_border?(raw_value) do
+    normalised = raw_value |> String.trim() |> String.downcase()
+    normalised in ["none", "0", "hidden"]
   end
 
   # The `border` shorthand always applies the same width/style/color to

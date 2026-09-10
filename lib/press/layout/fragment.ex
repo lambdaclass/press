@@ -38,6 +38,22 @@ defmodule Press.Layout.Fragment do
     # header is only worth carrying if at least one body row follows it.
     {fitting, remaining} = Enum.split_while(body, &fits?(&1, limit_y))
 
+    # The first child that does not fit may still have a break inside it — a
+    # paragraph can give up its first lines even when the whole of it cannot
+    # stay. Without this the page stops at the last child boundary and leaves
+    # the rest of the sheet empty.
+    {fitting, remaining} =
+      case remaining do
+        [first | rest] ->
+          case split(first, limit_y) do
+            {:split, head, tail} -> {fitting ++ [head], [tail | rest]}
+            :indivisible -> {fitting, remaining}
+          end
+
+        [] ->
+          {fitting, remaining}
+      end
+
     cond do
       remaining == [] ->
         :indivisible

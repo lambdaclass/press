@@ -61,4 +61,22 @@ defmodule Press.Font.Widths do
   def char_width(:courier_bold_oblique, cp), do: Map.get(@courier_bold_oblique, cp, @fallback.courier_bold_oblique)
 
   def char_width(_font, cp), do: Map.get(@helvetica, cp, @fallback.helvetica)
+
+  @ascent_descent %{
+    helvetica: {718, -207},
+    helvetica_bold: {718, -207},
+    helvetica_oblique: {718, -207},
+    helvetica_bold_oblique: {718, -207},
+    times_roman: {683, -217},
+    times_bold: {676, -205},
+    times_italic: {683, -205},
+    times_bold_italic: {699, -205},
+    courier: {629, -157},
+    courier_bold: {626, -142},
+    courier_oblique: {629, -157},
+    courier_bold_oblique: {626, -142}
+  }
+
+  @doc "Ascender and descender in 1/1000 em, as published in the AFM metrics."
+  def ascent_descent(font), do: Map.get(@ascent_descent, font, {718, -207})
 end

@@ -119,7 +119,7 @@ defmodule Press.PDF.Renderer do
        )
        when is_binary(text) and text != "" do
     pdf_x = box.x
-    pdf_y = page_height - box.y - size * 0.8
+    pdf_y = page_height - box.y - baseline_offset(font, size, box.height)
 
     Document.draw_text(doc, page_idx, pdf_x, pdf_y, text,
       font: font || :helvetica,
@@ -130,6 +130,19 @@ defmodule Press.PDF.Renderer do
   end
 
   defp render_text(doc, _box, _page_idx, _h), do: doc
+
+  # Distance from the top of the line box down to the baseline: the leading is
+  # split evenly above and below the text, so a line taller than the glyphs
+  # pushes the baseline down by half the difference.
+  defp baseline_offset(font, size, line_height) do
+    {ascent, descent} = Press.Font.Widths.ascent_descent(font || :helvetica)
+    size = size || 12.0
+    ascent_pt = ascent / 1000.0 * size
+    glyph_height = (ascent - descent) / 1000.0 * size
+    half_leading = ((line_height || glyph_height) - glyph_height) / 2.0
+
+    half_leading + ascent_pt
+  end
 
   defp render_image(
          doc,

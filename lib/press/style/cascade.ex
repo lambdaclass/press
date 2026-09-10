@@ -24,7 +24,8 @@ defmodule Press.Style.Cascade do
     list_style_type: :disc,
     list_style_position: :outside,
     page_break_before: :auto,
-    page_break_after: :auto
+    page_break_after: :auto,
+    display: nil
   }
 
   @initial_font_size 12.0
@@ -43,7 +44,8 @@ defmodule Press.Style.Cascade do
 
   @keyword_non_inheritable [
     {:page_break_before, "page-break-before"},
-    {:page_break_after, "page-break-after"}
+    {:page_break_after, "page-break-after"},
+    {:display, "display"}
   ]
 
   @doc """
@@ -163,7 +165,7 @@ defmodule Press.Style.Cascade do
       |> Map.put(:background_color, Map.get(specified, "background-color"))
       |> then(fn c ->
         Enum.reduce(@keyword_non_inheritable, c, fn {key, prop}, acc ->
-          Map.put(acc, key, Map.get(specified, prop, :auto))
+          Map.put(acc, key, Map.get(specified, prop, Map.fetch!(@initial, key)))
         end)
       end)
 

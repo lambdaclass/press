@@ -10,7 +10,7 @@ defmodule Press.Layout.Block do
   """
   def layout_block(%Node{} = node, containing_width, container_x, start_y, images \\ %{}) do
     cond do
-      node.element.tag in ~w(head style link meta script title iframe) ->
+      Press.Layout.Visibility.hidden?(node) ->
         {%Box{type: :block, width: 0.0, height: 0.0}, start_y, 0.0}
 
       node.element.tag == "table" ->
@@ -138,8 +138,8 @@ defmodule Press.Layout.Block do
     else
       clean_children =
         Enum.reject(children, fn
-          %Node{element: %{tag: tag}} when tag in ~w(head style link meta script title iframe) ->
-            true
+          %Node{} = child_node ->
+            Press.Layout.Visibility.hidden?(child_node)
 
           %Text{content: c} ->
             String.trim(c) == ""

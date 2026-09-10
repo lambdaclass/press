@@ -1,17 +1,172 @@
 defmodule Press.HTML.Entities do
   @moduledoc false
 
-  @entity_regex ~r/&(amp|lt|gt|quot|apos|#[0-9]+|#[xX][0-9a-fA-F]+);/
+  @named %{
+    "amp" => "&",
+    "lt" => "<",
+    "gt" => ">",
+    "quot" => "\"",
+    "apos" => "'",
+    "nbsp" => <<0xA0::utf8>>,
+    "iexcl" => "¡",
+    "cent" => "¢",
+    "pound" => "£",
+    "curren" => "¤",
+    "yen" => "¥",
+    "brvbar" => "¦",
+    "sect" => "§",
+    "uml" => "¨",
+    "copy" => "©",
+    "ordf" => "ª",
+    "laquo" => "«",
+    "not" => "¬",
+    "shy" => <<0xAD::utf8>>,
+    "reg" => "®",
+    "macr" => "¯",
+    "deg" => "°",
+    "plusmn" => "±",
+    "sup2" => "²",
+    "sup3" => "³",
+    "acute" => "´",
+    "micro" => "µ",
+    "para" => "¶",
+    "middot" => "·",
+    "cedil" => "¸",
+    "sup1" => "¹",
+    "ordm" => "º",
+    "raquo" => "»",
+    "frac14" => "¼",
+    "frac12" => "½",
+    "frac34" => "¾",
+    "iquest" => "¿",
+    "Agrave" => "À",
+    "Aacute" => "Á",
+    "Acirc" => "Â",
+    "Atilde" => "Ã",
+    "Auml" => "Ä",
+    "Aring" => "Å",
+    "AElig" => "Æ",
+    "Ccedil" => "Ç",
+    "Egrave" => "È",
+    "Eacute" => "É",
+    "Ecirc" => "Ê",
+    "Euml" => "Ë",
+    "Igrave" => "Ì",
+    "Iacute" => "Í",
+    "Icirc" => "Î",
+    "Iuml" => "Ï",
+    "ETH" => "Ð",
+    "Ntilde" => "Ñ",
+    "Ograve" => "Ò",
+    "Oacute" => "Ó",
+    "Ocirc" => "Ô",
+    "Otilde" => "Õ",
+    "Ouml" => "Ö",
+    "times" => "×",
+    "Oslash" => "Ø",
+    "Ugrave" => "Ù",
+    "Uacute" => "Ú",
+    "Ucirc" => "Û",
+    "Uuml" => "Ü",
+    "Yacute" => "Ý",
+    "THORN" => "Þ",
+    "szlig" => "ß",
+    "agrave" => "à",
+    "aacute" => "á",
+    "acirc" => "â",
+    "atilde" => "ã",
+    "auml" => "ä",
+    "aring" => "å",
+    "aelig" => "æ",
+    "ccedil" => "ç",
+    "egrave" => "è",
+    "eacute" => "é",
+    "ecirc" => "ê",
+    "euml" => "ë",
+    "igrave" => "ì",
+    "iacute" => "í",
+    "icirc" => "î",
+    "iuml" => "ï",
+    "eth" => "ð",
+    "ntilde" => "ñ",
+    "ograve" => "ò",
+    "oacute" => "ó",
+    "ocirc" => "ô",
+    "otilde" => "õ",
+    "ouml" => "ö",
+    "divide" => "÷",
+    "oslash" => "ø",
+    "ugrave" => "ù",
+    "uacute" => "ú",
+    "ucirc" => "û",
+    "uuml" => "ü",
+    "yacute" => "ý",
+    "thorn" => "þ",
+    "yuml" => "ÿ",
+    "OElig" => "Œ",
+    "oelig" => "œ",
+    "Scaron" => "Š",
+    "scaron" => "š",
+    "Yuml" => "Ÿ",
+    "fnof" => "ƒ",
+    "circ" => "ˆ",
+    "tilde" => "˜",
+    "ensp" => <<0x2002::utf8>>,
+    "emsp" => <<0x2003::utf8>>,
+    "thinsp" => <<0x2009::utf8>>,
+    "zwnj" => <<0x200C::utf8>>,
+    "zwj" => <<0x200D::utf8>>,
+    "lrm" => <<0x200E::utf8>>,
+    "rlm" => <<0x200F::utf8>>,
+    "ndash" => "–",
+    "mdash" => "—",
+    "lsquo" => "‘",
+    "rsquo" => "’",
+    "sbquo" => "‚",
+    "ldquo" => "“",
+    "rdquo" => "”",
+    "bdquo" => "„",
+    "dagger" => "†",
+    "Dagger" => "‡",
+    "bull" => "•",
+    "hellip" => "…",
+    "permil" => "‰",
+    "prime" => "′",
+    "Prime" => "″",
+    "lsaquo" => "‹",
+    "rsaquo" => "›",
+    "oline" => "‾",
+    "frasl" => "⁄",
+    "euro" => "€",
+    "trade" => "™",
+    "larr" => "←",
+    "uarr" => "↑",
+    "rarr" => "→",
+    "darr" => "↓",
+    "harr" => "↔",
+    "minus" => "−",
+    "lowast" => "∗",
+    "radic" => "√",
+    "infin" => "∞",
+    "cap" => "∩",
+    "cup" => "∪",
+    "int" => "∫",
+    "ne" => "≠",
+    "equiv" => "≡",
+    "le" => "≤",
+    "ge" => "≥",
+    "loz" => "◊",
+    "spades" => "♠",
+    "clubs" => "♣",
+    "hearts" => "♥",
+    "diams" => "♦"
+  }
+
+  @entity_regex ~r/&([a-zA-Z][a-zA-Z0-9]{1,31}|#[0-9]+|#[xX][0-9a-fA-F]+);/
 
   def decode(text) when is_binary(text) do
     Regex.replace(@entity_regex, text, &decode_match/2)
   end
-
-  defp decode_match(_whole, "amp"), do: "&"
-  defp decode_match(_whole, "lt"), do: "<"
-  defp decode_match(_whole, "gt"), do: ">"
-  defp decode_match(_whole, "quot"), do: "\""
-  defp decode_match(_whole, "apos"), do: "'"
 
   defp decode_match(whole, "#" <> rest) do
     {digits, base} =
@@ -22,11 +177,16 @@ defmodule Press.HTML.Entities do
       end
 
     case Integer.parse(digits, base) do
-      {codepoint, ""} when codepoint in 0x00..0xD7FF or codepoint in 0xE000..0x10FFFF ->
+      {codepoint, ""} when codepoint in 0x20..0xD7FF or codepoint in 0xE000..0x10FFFF ->
+        <<codepoint::utf8>>
+
+      {codepoint, ""} when codepoint in [0x09, 0x0A, 0x0D] ->
         <<codepoint::utf8>>
 
       _ ->
         whole
     end
   end
+
+  defp decode_match(whole, name), do: Map.get(@named, name, whole)
 end

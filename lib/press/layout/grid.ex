@@ -89,7 +89,7 @@ defmodule Press.Layout.Grid do
 
   defp filter_visual_children(children) do
     Enum.reject(children, fn
-      %Node{element: %{tag: tag}} -> tag in ~w(head style link meta script title iframe)
+      %Node{} = n -> Press.Layout.Visibility.hidden?(n)
       %Text{content: c} -> String.trim(c) == ""
       _ -> false
     end)

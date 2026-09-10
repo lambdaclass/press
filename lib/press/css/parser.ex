@@ -29,6 +29,8 @@ defmodule Press.CSS.Parser do
 
   @keyword_properties %{
     "font-weight" => [:normal, :bold],
+    "display" => [:block, :inline, :"inline-block", :flex, :grid, :table, :none, :"list-item",
+                  :"inline-flex", :"inline-grid", :"table-row", :"table-cell", :"flex-root"],
     "font-style" => [:normal, :italic],
     "text-align" => [:left, :right, :center, :justify],
     "vertical-align" => [:top, :middle, :bottom, :baseline],

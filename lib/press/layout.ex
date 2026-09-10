@@ -101,7 +101,9 @@ defmodule Press.Layout do
     clean_whitespace_nodes(filtered)
   end
 
-  defp filter_node(%Node{element: %{tag: tag}}) when tag in @non_visual_tags, do: []
+  defp filter_node(%Node{} = node) when node.element.tag in @non_visual_tags, do: []
+
+  defp filter_node(%Node{computed: %{display: :none}}), do: []
 
   defp filter_node(%Node{element: %{tag: tag}, children: children})
        when tag in ["html", "body"] do

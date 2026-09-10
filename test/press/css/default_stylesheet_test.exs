@@ -15,7 +15,7 @@ defmodule Press.CSS.DefaultStylesheetTest do
     rules = DefaultStylesheet.rules()
     h1_rule = Enum.find(rules, &(&1.selector == [%{type: "h1"}]))
 
-    assert h1_rule.declarations["font-size"] == {:length, 24.0, :pt}
+    assert h1_rule.declarations["font-size"] == {:length, 2.0, :em}
     assert h1_rule.declarations["margin-top"] == {:length, 0.67, :em}
   end
 

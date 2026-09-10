@@ -28,9 +28,9 @@ defmodule Press.Layout.FlexGrid do
     computed = node.computed
     children = visual_children(node.children)
 
-    tracks = computed.grid_template_columns || [{:fr, 1.0}]
-    col_gap = computed.column_gap
-    row_gap = computed.row_gap
+    tracks = Map.get(computed, :grid_template_columns, nil) || [{:fr, 1.0}]
+    col_gap = Map.get(computed, :column_gap, 0.0)
+    row_gap = Map.get(computed, :row_gap, 0.0)
 
     widths = resolve_tracks(tracks, geom.content_width, col_gap, children)
     offsets = track_offsets(widths, col_gap)
@@ -47,7 +47,7 @@ defmodule Press.Layout.FlexGrid do
             offsets,
             geom.content_origin_x,
             geom.content_origin_y + curr_y + gap,
-            computed.align_items,
+            Map.get(computed, :align_items, :stretch),
             images
           )
 
@@ -70,7 +70,7 @@ defmodule Press.Layout.FlexGrid do
     computed = node.computed
     children = visual_children(node.children)
 
-    if column?(computed.flex_direction) do
+    if column?(Map.get(computed, :flex_direction, :row)) do
       layout_flex_column(node, geom, children, images)
     else
       layout_flex_row(node, geom, children, images)
@@ -83,7 +83,7 @@ defmodule Press.Layout.FlexGrid do
 
   defp layout_flex_row(node, geom, children, images) do
     computed = node.computed
-    gap = computed.column_gap
+    gap = Map.get(computed, :column_gap, 0.0)
     total_gap = gap * max(0, length(children) - 1)
     inner = max(0.0, geom.content_width - total_gap)
 
@@ -113,7 +113,7 @@ defmodule Press.Layout.FlexGrid do
 
     used = Enum.sum(widths) + total_gap
     free = max(0.0, geom.content_width - used)
-    {lead, between} = distribute(computed.justify_content, free, length(children), gap)
+    {lead, between} = distribute(Map.get(computed, :justify_content, :"flex-start"), free, length(children), gap)
 
     {cells, x_end} =
       Enum.zip(children, widths)
@@ -127,7 +127,7 @@ defmodule Press.Layout.FlexGrid do
 
     boxes =
       Enum.map(cells, fn {child, box} ->
-        align_cross(child, box, row_height, computed.align_items, geom.content_origin_y)
+        align_cross(child, box, row_height, Map.get(computed, :align_items, :stretch), geom.content_origin_y)
       end)
 
     finish(node, geom, boxes, row_height)
@@ -139,8 +139,8 @@ defmodule Press.Layout.FlexGrid do
 
   defp layout_flex_column(node, geom, children, images) do
     computed = node.computed
-    gap = computed.row_gap
-    align = computed.align_items
+    gap = Map.get(computed, :row_gap, 0.0)
+    align = Map.get(computed, :align_items, :stretch)
 
     {cells, content_height} =
       Enum.reduce(children, {[], 0.0}, fn child, {acc, curr_y} ->
@@ -167,7 +167,7 @@ defmodule Press.Layout.FlexGrid do
     # height often comes from min-height or from a grid row stretching the cell.
     target = target_height(node, content_height)
     slack = max(0.0, target - content_height)
-    {lead, between} = distribute(computed.justify_content, slack, length(cells), 0.0)
+    {lead, between} = distribute(Map.get(computed, :justify_content, :"flex-start"), slack, length(cells), 0.0)
 
     cells =
       cells
@@ -314,8 +314,8 @@ defmodule Press.Layout.FlexGrid do
   end
 
   defp centering_column?(%Node{computed: computed}) do
-    flex_display?(computed.display) and column?(computed.flex_direction) and
-      computed.justify_content in [:center, :"space-around", :"space-evenly"]
+    flex_display?(Map.get(computed, :display, nil)) and column?(Map.get(computed, :flex_direction, :row)) and
+      Map.get(computed, :justify_content, :"flex-start") in [:center, :"space-around", :"space-evenly"]
   end
 
   defp centering_column?(_), do: false
@@ -533,7 +533,7 @@ defmodule Press.Layout.FlexGrid do
     end)
   end
 
-  defp shift_y(%Box{} = box, 0.0), do: box
+  defp shift_y(%Box{} = box, dy) when dy == 0.0, do: box
 
   defp shift_y(%Box{} = box, dy) do
     %Box{box | y: box.y + dy, children: Enum.map(box.children, &shift_y(&1, dy))}

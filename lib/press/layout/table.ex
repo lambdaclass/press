@@ -49,7 +49,7 @@ defmodule Press.Layout.Table do
         col_count,
         table_width,
         col_hints,
-        computed.table_layout
+        Map.get(computed, :table_layout, :auto)
       )
 
     {row_boxes, total_height} =

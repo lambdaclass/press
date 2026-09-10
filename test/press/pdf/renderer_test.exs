@@ -35,12 +35,15 @@ defmodule Press.PDF.RendererTest do
       assert pdf_page.width == 600.0
       assert pdf_page.height == 800.0
 
-      # In PDF coordinates, y is 800 - 100 - 24*0.8 = 680.8
+      # The baseline sits half the leading plus the ascender below the top of
+      # the line box: Helvetica-Bold ascends 718/1000 and descends 207/1000, so
+      # for a 24pt glyph in a 14.4pt line box the leading is negative and the
+      # offset is (14.4 - 22.2) / 2 + 17.232 = 13.332.
       assert [
-               {:text, 50.0, pdf_y, :helvetica_bold, 24.0, {1.0, +0.0, +0.0}, "Invoice"}
+               {:text, 50.0, pdf_y, :helvetica_bold, 24.0, {1.0, +0.0, +0.0}, "Invoice", +0.0}
              ] = pdf_page.ops
 
-      assert_in_delta pdf_y, 680.8, 0.1
+      assert_in_delta pdf_y, 800 - 100 - 13.332, 0.1
     end
 
     test "renders background color and borders as filled rectangles" do

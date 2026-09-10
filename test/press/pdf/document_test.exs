@@ -31,7 +31,7 @@ defmodule Press.PDF.DocumentTest do
 
     assert [
              %Press.PDF.Page{
-               ops: [{:text, 10.0, 20.0, :helvetica_bold, 24, {0, 0, 0}, "Hello world!"}]
+               ops: [{:text, 10.0, 20.0, :helvetica_bold, 24, {0, 0, 0}, "Hello world!", +0.0}]
              }
            ] =
              doc.pages
@@ -41,7 +41,7 @@ defmodule Press.PDF.DocumentTest do
     {doc, index} = Document.new() |> Document.add_page(595.0, 842.0)
     doc = Document.draw_text(doc, index, 0.0, 0.0, "x")
 
-    assert [%Press.PDF.Page{ops: [{:text, +0.0, +0.0, :helvetica, 12, {0, 0, 0}, "x"}]}] =
+    assert [%Press.PDF.Page{ops: [{:text, +0.0, +0.0, :helvetica, 12, {0, 0, 0}, "x", +0.0}]}] =
              doc.pages
   end
 

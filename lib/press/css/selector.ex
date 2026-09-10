@@ -45,7 +45,13 @@ defmodule Press.CSS.Selector do
         nil
 
       compound ->
-        compound = if acc == [], do: compound, else: Map.put(compound, :combinator, combinator)
+        # Descendant is the default relation, so it is left implicit and only a
+        # real combinator is recorded.
+        compound =
+          if acc == [] or combinator == :descendant,
+            do: compound,
+            else: Map.put(compound, :combinator, combinator)
+
         build_compounds(rest, :descendant, [compound | acc])
     end
   end

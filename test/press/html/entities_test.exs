@@ -24,8 +24,14 @@ defmodule Press.HTML.EntitiesTest do
     assert Entities.decode("Ben &amp; Jerry&#39;s") == "Ben & Jerry's"
   end
 
+  test "decodes a named entity" do
+    assert Entities.decode("&nbsp;") == <<0xA0::utf8>>
+    assert Entities.decode("&aacute;rbol") == "árbol"
+    assert Entities.decode("uno &mdash; dos") == "uno — dos"
+  end
+
   test "leaves an unrecognized entity name as literal text" do
-    assert Entities.decode("&nbsp;") == "&nbsp;"
+    assert Entities.decode("&notanentity;") == "&notanentity;"
   end
 
   test "leaves a malformed entity (no terminating ;) as literal text" do

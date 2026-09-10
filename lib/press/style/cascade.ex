@@ -24,9 +24,12 @@ defmodule Press.Style.Cascade do
     list_style_type: :disc,
     list_style_position: :outside,
     letter_spacing: 0.0,
+    white_space: :normal,
     page_break_before: :auto,
     page_break_after: :auto,
     display: nil,
+    box_sizing: :"content-box",
+    table_layout: :auto,
     flex_direction: :row,
     justify_content: :"flex-start",
     align_items: :stretch
@@ -43,13 +46,16 @@ defmodule Press.Style.Cascade do
     {:vertical_align, "vertical-align"},
     {:text_transform, "text-transform"},
     {:list_style_type, "list-style-type"},
-    {:list_style_position, "list-style-position"}
+    {:list_style_position, "list-style-position"},
+    {:white_space, "white-space"}
   ]
 
   @keyword_non_inheritable [
     {:page_break_before, "page-break-before"},
     {:page_break_after, "page-break-after"},
     {:display, "display"},
+    {:box_sizing, "box-sizing"},
+    {:table_layout, "table-layout"},
     {:flex_direction, "flex-direction"},
     {:justify_content, "justify-content"},
     {:align_items, "align-items"}

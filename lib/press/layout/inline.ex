@@ -16,9 +16,24 @@ defmodule Press.Layout.Inline do
       |> flatten_inlines()
       |> collapse_whitespace()
 
-    tokens
-    |> break_lines(available_width)
-    |> Enum.map(&build_line_box(&1, available_width, text_align))
+    # `white-space: nowrap` keeps the run on one line even when it overflows,
+    # which is the point of asking for it.
+    lines =
+      if nowrap?(nodes) do
+        [drop_leading_spaces(tokens)]
+      else
+        break_lines(tokens, available_width)
+      end
+
+    Enum.map(lines, &build_line_box(&1, available_width, text_align))
+  end
+
+  defp nowrap?(nodes) do
+    Enum.any?(nodes, fn
+      %Node{computed: %{white_space: ws}} -> ws in [:nowrap, :pre]
+      %Text{computed: %{white_space: ws}} -> ws in [:nowrap, :pre]
+      _ -> false
+    end)
   end
 
   defp flatten_inlines(nodes) do

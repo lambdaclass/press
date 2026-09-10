@@ -18,10 +18,10 @@ defmodule Press.Layout.Table do
     table_width =
       case computed.width do
         {:percent, p} ->
-          p / 100.0 * containing_width
+          border_box_deduct(p / 100.0 * containing_width, computed, padding, border_width)
 
         n when is_number(n) ->
-          n * 1.0
+          border_box_deduct(n * 1.0, computed, padding, border_width)
 
         :auto ->
           max(
@@ -73,6 +73,16 @@ defmodule Press.Layout.Table do
         border_width.bottom
 
     {table_box, next_y, margin.bottom}
+  end
+
+  defp border_box_deduct(width, computed, padding, border) do
+    case Map.get(computed, :box_sizing) do
+      :"border-box" ->
+        max(0.0, width - padding.left - padding.right - border.left - border.right)
+
+      _ ->
+        width
+    end
   end
 
   defp extract_rows(children, in_header \\ false) do

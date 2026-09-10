@@ -417,14 +417,22 @@ defmodule Press.Layout.FlexGrid do
     padding = resolve_sides(computed.padding, containing_width)
     border = resolve_sides(computed.border_width, containing_width)
 
-    outer =
+    {outer, declared?} =
       case computed.width do
-        {:percent, p} -> p / 100.0 * containing_width
-        n when is_number(n) -> n * 1.0
-        _ -> max(0.0, containing_width - margin.left - margin.right)
+        {:percent, p} -> {p / 100.0 * containing_width, true}
+        n when is_number(n) -> {n * 1.0, true}
+        _ -> {max(0.0, containing_width - margin.left - margin.right), false}
       end
 
-    content_width = max(0.0, outer - padding.left - padding.right - border.left - border.right)
+    # A declared width under `border-box` already includes padding and border;
+    # otherwise they sit outside it, and an auto width is the space left in the
+    # container.
+    content_width =
+      if declared? and Map.get(computed, :box_sizing) != :"border-box" do
+        outer
+      else
+        max(0.0, outer - padding.left - padding.right - border.left - border.right)
+      end
 
     box_x = container_x + margin.left
     box_y = start_y + margin.top

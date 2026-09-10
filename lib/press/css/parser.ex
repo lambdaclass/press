@@ -46,6 +46,8 @@ defmodule Press.CSS.Parser do
       :end
     ],
     "align-items" => [:stretch, :"flex-start", :"flex-end", :center, :baseline, :start, :end],
+    "white-space" => [:normal, :nowrap, :pre, :"pre-wrap", :"pre-line"],
+    "table-layout" => [:auto, :fixed],
     "text-align" => [:left, :right, :center, :justify],
     "vertical-align" => [:top, :middle, :bottom, :baseline],
     "text-transform" => [:uppercase, :lowercase, :capitalize, :none],

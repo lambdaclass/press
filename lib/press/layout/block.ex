@@ -41,10 +41,10 @@ defmodule Press.Layout.Block do
     content_width =
       case computed.width do
         {:percent, p} ->
-          p / 100.0 * containing_width
+          deduct_box(p / 100.0 * containing_width, computed, padding, border_width)
 
         n when is_number(n) ->
-          n * 1.0
+          deduct_box(n * 1.0, computed, padding, border_width)
 
         :auto ->
           max(
@@ -113,6 +113,18 @@ defmodule Press.Layout.Block do
 
     next_y = box_y + total_outer_height
     {box, next_y, margin.bottom}
+  end
+
+  # Under `box-sizing: border-box` the declared width already covers padding
+  # and border, so the content box is what is left of it.
+  defp deduct_box(width, computed, padding, border) do
+    case Map.get(computed, :box_sizing) do
+      :"border-box" ->
+        max(0.0, width - padding.left - padding.right - border.left - border.right)
+
+      _ ->
+        width
+    end
   end
 
   def layout_children(children, content_width, origin_x, origin_y, text_align, images \\ %{})

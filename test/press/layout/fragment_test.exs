@@ -44,12 +44,13 @@ defmodule Press.Layout.FragmentTest do
       assert length(tail.children) == 1
     end
 
-    test "packs the tail back against the box origin" do
+    test "the tail keeps its children where the layout put them" do
       box = container([child(0.0, 40.0), child(40.0, 40.0), child(80.0, 40.0)])
 
       assert {:split, _head, tail} = Fragment.split(box, 80.0)
       assert [only] = tail.children
-      assert only.y == box.y
+      assert only.y == 80.0
+      assert tail.y == 80.0
     end
 
     test "the head drops its bottom edge and the tail its top, so the box reads as one" do

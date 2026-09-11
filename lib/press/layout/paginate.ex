@@ -9,7 +9,6 @@ defmodule Press.Layout.Paginate do
   def paginate(%Box{children: children} = root, page_config) do
     {_page_width, page_height} = page_config.size
     margin = page_config.margin
-    wrapper_bottom = root.padding.bottom
 
     header_box = Enum.find(children, &(&1.tag == "header"))
     footer_box = Enum.find(children, &(&1.tag == "footer"))
@@ -17,122 +16,73 @@ defmodule Press.Layout.Paginate do
     header_h = if header_box, do: Box.outer_height(header_box), else: 0.0
     footer_h = if footer_box, do: Box.outer_height(footer_box), else: 0.0
 
-    usable_height = max(10.0, page_height - margin.top - margin.bottom - wrapper_bottom)
-    flow_height = max(10.0, usable_height - header_h - footer_h)
-    flow_start_y = margin.top + header_h
-    footer_y = page_height - margin.bottom - footer_h
+    # `<html>`/`<body>` are one box spanning every page: their top padding
+    # indents the first page only, their bottom padding the last.
+    top_of_page = margin.top + header_h
+
+    ctx = %{
+      page_top: top_of_page,
+      flow_start_y: top_of_page + root.padding.top,
+      page_bottom:
+        max(
+          top_of_page + 10.0,
+          page_height - margin.bottom - footer_h - root.padding.bottom
+        ),
+      header: header_box,
+      footer: footer_box,
+      footer_y: page_height - margin.bottom - footer_h,
+      page_config: page_config
+    }
 
     flow_items = Enum.reject(children, &(&1.tag in ["header", "footer"]))
 
-    do_paginate(
-      flow_items,
-      flow_height,
-      flow_start_y,
-      [],
-      0.0,
-      [],
-      1,
-      header_box,
-      footer_box,
-      footer_y,
-      page_config
-    )
+    do_paginate(flow_items, ctx, [], 0.0, [], 1)
   end
 
-  defp do_paginate(
-         [],
-         _flow_h,
-         _flow_start_y,
-         current_page_boxes,
-         _current_y,
-         pages_acc,
-         page_num,
-         header,
-         footer,
-         footer_y,
-         page_config
-       ) do
+  defp do_paginate([], ctx, current_page_boxes, _page_shift, pages_acc, page_num) do
     if current_page_boxes != [] or pages_acc == [] do
-      page =
-        build_page(
-          current_page_boxes,
-          page_num,
-          header,
-          footer,
-          footer_y,
-          page_config
-        )
-
-      Enum.reverse([page | pages_acc])
+      Enum.reverse([build_page(current_page_boxes, page_num, ctx) | pages_acc])
     else
       Enum.reverse(pages_acc)
     end
   end
 
-  defp do_paginate(
-         [box | rest],
-         flow_h,
-         flow_start_y,
-         current_page_boxes,
-         current_y,
-         pages_acc,
-         page_num,
-         header,
-         footer,
-         footer_y,
-         page_config
-       ) do
-    box_h = Box.outer_height(box)
+  defp do_paginate([box | rest], ctx, current_page_boxes, page_shift, pages_acc, page_num) do
     page_empty? = current_page_boxes == []
 
-    emit_page = fn boxes ->
-      build_page(boxes, page_num, header, footer, footer_y, page_config)
-    end
+    # A page keeps the y the layout gave each box and moves the whole page by a
+    # single offset. Re-stacking them by height would add back the margins that
+    # collapsed between siblings.
+    shift = if page_empty?, do: ctx.flow_start_y - margin_box_top(box), else: page_shift
 
-    continue_on_next_page = fn queue, page ->
+    next_page = fn queue, page ->
       do_paginate(
         queue,
-        flow_h,
-        flow_start_y,
+        %{ctx | flow_start_y: ctx.page_top},
         [],
         0.0,
         [page | pages_acc],
-        page_num + 1,
-        header,
-        footer,
-        footer_y,
-        page_config
+        page_num + 1
       )
     end
 
+    emit = fn boxes -> build_page(boxes, page_num, ctx) end
+
     place = fn ->
-      placed_box = shift_box_y(box, flow_start_y + current_y - box.y)
-      new_current_boxes = current_page_boxes ++ [placed_box]
+      placed = current_page_boxes ++ [shift_box_y(box, shift)]
 
       if get_page_break(box, :page_break_after) == :always do
-        continue_on_next_page.(rest, emit_page.(new_current_boxes))
+        next_page.(rest, emit.(placed))
       else
-        do_paginate(
-          rest,
-          flow_h,
-          flow_start_y,
-          new_current_boxes,
-          current_y + box_h,
-          pages_acc,
-          page_num,
-          header,
-          footer,
-          footer_y,
-          page_config
-        )
+        do_paginate(rest, ctx, placed, shift, pages_acc, page_num)
       end
     end
 
     cond do
       get_page_break(box, :page_break_before) == :always and not page_empty? ->
-        continue_on_next_page.([box | rest], emit_page.(current_page_boxes))
+        next_page.([box | rest], emit.(current_page_boxes))
 
-      current_y + box_h <= flow_h ->
+      margin_box_top(box) + shift + Box.outer_height(box) <= ctx.page_bottom ->
         place.()
 
       true ->
@@ -140,58 +90,43 @@ defmodule Press.Layout.Paginate do
         # opportunity above the page edge, otherwise push it whole to the next
         # page — and if the page is already empty, place it anyway rather than
         # loop forever on a box no page can hold.
-        case Fragment.split(box, box.y + (flow_h - current_y)) do
+        case Fragment.split(box, ctx.page_bottom - shift) do
           {:split, head, tail} ->
-            placed_head = shift_box_y(head, flow_start_y + current_y - head.y)
-            continue_on_next_page.([tail | rest], emit_page.(current_page_boxes ++ [placed_head]))
+            next_page.([tail | rest], emit.(current_page_boxes ++ [shift_box_y(head, shift)]))
 
           :indivisible when page_empty? ->
             place.()
 
           :indivisible ->
-            continue_on_next_page.([box | rest], emit_page.(current_page_boxes))
+            next_page.([box | rest], emit.(current_page_boxes))
         end
     end
   end
 
-  defp build_page(boxes, number, header, footer, footer_y, page_config) do
-    {page_width, page_height} = page_config.size
+  defp build_page(boxes, number, ctx) do
+    {page_width, page_height} = ctx.page_config.size
+    margin = ctx.page_config.margin
 
-    page_boxes = []
+    header =
+      if ctx.header, do: [shift_box_y(ctx.header, margin.top - ctx.header.y)], else: []
 
-    page_boxes =
-      if header do
-        header_placed = shift_box_y(header, page_config.margin.top - header.y)
-        page_boxes ++ [header_placed]
-      else
-        page_boxes
-      end
-
-    page_boxes = page_boxes ++ boxes
-
-    page_boxes =
-      if footer do
-        footer_placed = shift_box_y(footer, footer_y - footer.y)
-        page_boxes ++ [footer_placed]
-      else
-        page_boxes
-      end
+    footer =
+      if ctx.footer, do: [shift_box_y(ctx.footer, ctx.footer_y - ctx.footer.y)], else: []
 
     %Page{
       number: number,
       width: page_width,
       height: page_height,
-      margin: page_config.margin,
-      boxes: page_boxes
+      margin: margin,
+      boxes: header ++ boxes ++ footer
     }
   end
 
+  defp margin_box_top(%Box{y: y, margin: %{top: t}}) when is_number(t), do: y - t
+  defp margin_box_top(%Box{y: y}), do: y
+
   defp shift_box_y(%Box{} = box, delta_y) do
-    %Box{
-      box
-      | y: box.y + delta_y,
-        children: Enum.map(box.children, &shift_box_y(&1, delta_y))
-    }
+    %Box{box | y: box.y + delta_y, children: Enum.map(box.children, &shift_box_y(&1, delta_y))}
   end
 
   defp get_page_break(%Box{computed: computed}, key) when is_map(computed) do

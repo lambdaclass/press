@@ -29,6 +29,8 @@ defmodule Press do
     fraction of the font size (e.g. `0.02`). The base-14 fonts stop at
     Helvetica-Bold, so this is the only way to reach the weight of a heavier
     face. Defaults to `0.0`, which leaves the bold face untouched.
+  - `:print_background` — when false, background colours are left unpainted, the
+    way a browser's print pipeline drops them unless asked. Defaults to true.
   - `:page` — overrides the `@page` rule. `size:` takes `{width_pt, height_pt}` or
     `:a4` / `:letter` / `:legal`, and `landscape: true` swaps the resolved pair.
     `margin:` takes a number of points for all four sides, or a map with any of
@@ -74,7 +76,9 @@ defmodule Press do
     doc =
       Renderer.render_document(
         pages,
-        Map.put(page_config, :bold_boost, Keyword.get(opts, :bold_boost, 0.0))
+        page_config
+        |> Map.put(:bold_boost, Keyword.get(opts, :bold_boost, 0.0))
+        |> Map.put(:print_background, Keyword.get(opts, :print_background, true))
       )
 
     # 8. Write PDF Binary

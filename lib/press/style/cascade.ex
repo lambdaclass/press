@@ -30,6 +30,7 @@ defmodule Press.Style.Cascade do
     display: nil,
     box_sizing: :"content-box",
     table_layout: :auto,
+    border_collapse: :separate,
     flex_direction: :row,
     justify_content: :"flex-start",
     align_items: :stretch
@@ -56,6 +57,7 @@ defmodule Press.Style.Cascade do
     {:display, "display"},
     {:box_sizing, "box-sizing"},
     {:table_layout, "table-layout"},
+    {:border_collapse, "border-collapse"},
     {:flex_direction, "flex-direction"},
     {:justify_content, "justify-content"},
     {:align_items, "align-items"}

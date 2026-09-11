@@ -12,38 +12,45 @@ defmodule Press.PDF.Renderer do
     # strokes the glyphs on top of the fill to reach a heavier weight, the same
     # trick a browser uses for a family with no bold face, expressed as a
     # fraction of the font size.
-    boost = Map.get(page_config || %{}, :bold_boost, 0.0)
+    config = page_config || %{}
 
-    embedded = Map.get(page_config || %{}, :embedded_fonts, %{})
+    opts = %{
+      boost: Map.get(config, :bold_boost, 0.0),
+      backgrounds: Map.get(config, :print_background, true)
+    }
+
+    embedded = Map.get(config, :embedded_fonts, %{})
 
     Enum.reduce(pages, Document.new(embedded), fn %Page{} = page, doc ->
       {doc_with_page, page_index} = Document.add_page(doc, page.width, page.height)
-      render_boxes(page.boxes, doc_with_page, page_index, page.height, boost)
+      render_boxes(page.boxes, doc_with_page, page_index, page.height, opts)
     end)
   end
 
-  defp render_boxes(boxes, doc, page_index, page_height, boost) do
+  defp render_boxes(boxes, doc, page_index, page_height, opts) do
     Enum.reduce(boxes, doc, fn box, acc_doc ->
-      render_box(box, acc_doc, page_index, page_height, boost)
+      render_box(box, acc_doc, page_index, page_height, opts)
     end)
   end
 
-  defp render_box(%Box{} = box, doc, page_index, page_height, boost) do
+  defp render_box(%Box{} = box, doc, page_index, page_height, opts) do
     doc
-    |> render_background(box, page_index, page_height)
+    |> render_background(box, page_index, page_height, opts)
     |> render_borders(box, page_index, page_height)
-    |> render_text(box, page_index, page_height, boost)
+    |> render_text(box, page_index, page_height, opts.boost)
     |> render_image(box, page_index, page_height)
-    |> render_children(box.children, page_index, page_height, boost)
+    |> render_children(box.children, page_index, page_height, opts)
   end
 
-  defp render_children(doc, children, page_index, page_height, boost) do
-    render_boxes(children, doc, page_index, page_height, boost)
+  defp render_children(doc, children, page_index, page_height, opts) do
+    render_boxes(children, doc, page_index, page_height, opts)
   end
 
-  defp render_background(doc, %Box{background_color: nil}, _page_idx, _h), do: doc
+  defp render_background(doc, _box, _page_idx, _h, %{backgrounds: false}), do: doc
 
-  defp render_background(doc, %Box{background_color: color} = box, page_idx, page_height) do
+  defp render_background(doc, %Box{background_color: nil}, _page_idx, _h, _opts), do: doc
+
+  defp render_background(doc, %Box{background_color: color} = box, page_idx, page_height, _opts) do
     bw = Box.border_box_width(box)
     bh = Box.border_box_height(box)
 

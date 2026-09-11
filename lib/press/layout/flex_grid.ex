@@ -32,7 +32,7 @@ defmodule Press.Layout.FlexGrid do
     col_gap = Map.get(computed, :column_gap, 0.0)
     row_gap = Map.get(computed, :row_gap, 0.0)
 
-    widths = resolve_tracks(tracks, geom.content_width, col_gap, children)
+    widths = resolve_tracks(tracks, geom.content_width, col_gap, children, images)
     offsets = track_offsets(widths, col_gap)
     rows = Enum.chunk_every(children, max(1, length(widths)))
 
@@ -77,9 +77,6 @@ defmodule Press.Layout.FlexGrid do
     end
   end
 
-  # ---------------------------------------------------------------------------
-  # Flex, row direction
-  # ---------------------------------------------------------------------------
 
   defp layout_flex_row(node, geom, children, images) do
     computed = node.computed
@@ -93,7 +90,7 @@ defmodule Press.Layout.FlexGrid do
     base =
       Enum.map(children, fn child ->
         case explicit_width(child, geom.content_width) do
-          nil -> max_content_width(child)
+          nil -> natural_width(child, images, geom.content_width)
           w -> w
         end
       end)
@@ -133,9 +130,6 @@ defmodule Press.Layout.FlexGrid do
     finish(node, geom, boxes, row_height)
   end
 
-  # ---------------------------------------------------------------------------
-  # Flex, column direction
-  # ---------------------------------------------------------------------------
 
   defp layout_flex_column(node, geom, children, images) do
     computed = node.computed
@@ -151,7 +145,7 @@ defmodule Press.Layout.FlexGrid do
             geom.content_width
           else
             explicit_width(child, geom.content_width) ||
-              min(max_content_width(child), geom.content_width)
+              min(natural_width(child, images, geom.content_width), geom.content_width)
           end
 
         x = geom.content_origin_x + cross_offset(align, geom.content_width, width)
@@ -177,16 +171,13 @@ defmodule Press.Layout.FlexGrid do
     finish(node, geom, cells, max(content_height, target))
   end
 
-  # ---------------------------------------------------------------------------
-  # Grid tracks
-  # ---------------------------------------------------------------------------
 
-  defp resolve_tracks(tracks, content_width, col_gap, children) do
+  defp resolve_tracks(tracks, content_width, col_gap, children, images) do
     n = length(tracks)
     gaps = col_gap * max(0, n - 1)
     budget = max(0.0, content_width - gaps)
 
-    autos = auto_widths(tracks, children, n)
+    autos = auto_widths(tracks, children, n, content_width, images)
 
     fixed =
       tracks
@@ -220,14 +211,14 @@ defmodule Press.Layout.FlexGrid do
   end
 
   # An `auto` track is as wide as the widest max-content in its column.
-  defp auto_widths(tracks, children, n) do
+  defp auto_widths(tracks, children, n, content_width, images) do
     rows = Enum.chunk_every(children, max(1, n))
 
     Enum.with_index(tracks)
     |> Enum.map(fn {track, i} ->
       if track == :auto do
         rows
-        |> Enum.map(fn row -> row |> Enum.at(i) |> max_content_width() end)
+        |> Enum.map(fn row -> natural_width(Enum.at(row, i), images, content_width) end)
         |> Enum.max(fn -> 0.0 end)
       else
         0.0
@@ -272,9 +263,6 @@ defmodule Press.Layout.FlexGrid do
     {boxes, row_height}
   end
 
-  # ---------------------------------------------------------------------------
-  # Cross-axis sizing and placement
-  # ---------------------------------------------------------------------------
 
   # `stretch` grows the cell to the line's height so its border and background
   # cover the full row, and re-runs the cell's own vertical distribution — a
@@ -346,9 +334,6 @@ defmodule Press.Layout.FlexGrid do
     end
   end
 
-  # ---------------------------------------------------------------------------
-  # Intrinsic widths
-  # ---------------------------------------------------------------------------
 
   @doc """
   Widest the node can get without wrapping, in points.
@@ -408,9 +393,6 @@ defmodule Press.Layout.FlexGrid do
     |> Enum.reduce(0.0, fn {v, _k}, acc -> acc + v end)
   end
 
-  # ---------------------------------------------------------------------------
-  # Shared box plumbing
-  # ---------------------------------------------------------------------------
 
   defp geometry(%Node{computed: computed}, containing_width, container_x, start_y) do
     margin = resolve_sides(computed.margin, containing_width)
@@ -521,14 +503,27 @@ defmodule Press.Layout.FlexGrid do
      0.0}
   end
 
+  defp layout_child(%Node{element: %{tag: "img"}} = node, width, x, y, images) do
+    Press.Layout.Image.layout_image(node, images, width, x, y)
+  end
+
   defp layout_child(%Node{} = node, width, x, y, images) do
     Press.Layout.Block.layout_block(node, width, x, y, images)
   end
 
+  # An image's max-content width comes out of its own sizing rules (intrinsic
+  # size, `width`/`height` attributes, `max-width`), not from any text it holds.
+  defp natural_width(%Node{element: %{tag: "img"}} = node, images, containing) do
+    {box, _next_y, _mb} = Press.Layout.Image.layout_image(node, images, containing, 0.0, 0.0)
+    Box.outer_width(box)
+  end
+
+  defp natural_width(child, _images, _containing), do: max_content_width(child)
+
   defp visual_children(children) do
     Enum.reject(children, fn
       %Node{} = n -> Press.Layout.Visibility.hidden?(n)
-      %Text{content: c} -> String.trim(c) == ""
+      %Text{content: c} -> Press.Layout.Whitespace.blank?(c)
       _ -> true
     end)
   end

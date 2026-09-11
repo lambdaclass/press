@@ -10,12 +10,12 @@ defmodule Press.Layout.PaginateTest do
     }
   end
 
-  defp block_box(tag, height, page_break_opts \\ %{}) do
+  defp block_box(tag, height, y, page_break_opts \\ %{}) do
     %Box{
       type: :block,
       tag: tag,
       x: 50.0,
-      y: 50.0,
+      y: y,
       width: 500.0,
       height: height,
       margin: %{top: 0.0, right: 0.0, bottom: 0.0, left: 0.0},
@@ -28,8 +28,8 @@ defmodule Press.Layout.PaginateTest do
   describe "paginate/2" do
     test "fits boxes into a single page when total height is within flow area" do
       # Usable height = 800 - 50*2 = 700.0
-      b1 = block_box("p", 200.0)
-      b2 = block_box("p", 300.0)
+      b1 = block_box("p", 200.0, 50.0)
+      b2 = block_box("p", 300.0, 250.0)
       root = %Box{type: :root, children: [b1, b2]}
 
       pages = Paginate.paginate(root, page_config())
@@ -42,9 +42,9 @@ defmodule Press.Layout.PaginateTest do
 
     test "breaks into multiple pages when content overflows page flow height" do
       # Usable height = 700.0. 3 boxes of 300.0 each = 900.0 -> 2 pages
-      b1 = block_box("p", 300.0)
-      b2 = block_box("p", 300.0)
-      b3 = block_box("p", 300.0)
+      b1 = block_box("p", 300.0, 50.0)
+      b2 = block_box("p", 300.0, 350.0)
+      b3 = block_box("p", 300.0, 650.0)
       root = %Box{type: :root, children: [b1, b2, b3]}
 
       pages = Paginate.paginate(root, page_config())
@@ -88,8 +88,8 @@ defmodule Press.Layout.PaginateTest do
       }
 
       # Flow height = 800 - 50*2 - 40(header) - 40(footer) = 620.0
-      b1 = block_box("p", 400.0)
-      b2 = block_box("p", 400.0)
+      b1 = block_box("p", 400.0, 90.0)
+      b2 = block_box("p", 400.0, 490.0)
 
       root = %Box{type: :root, children: [header, b1, b2, footer]}
       pages = Paginate.paginate(root, page_config())
@@ -104,8 +104,8 @@ defmodule Press.Layout.PaginateTest do
     end
 
     test "forces a new page on page-break-before: always" do
-      b1 = block_box("p", 100.0)
-      b2 = block_box("p", 100.0, %{page_break_before: :always})
+      b1 = block_box("p", 100.0, 50.0)
+      b2 = block_box("p", 100.0, 150.0, %{page_break_before: :always})
       root = %Box{type: :root, children: [b1, b2]}
 
       pages = Paginate.paginate(root, page_config())

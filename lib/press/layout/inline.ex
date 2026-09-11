@@ -58,7 +58,7 @@ defmodule Press.Layout.Inline do
     Regex.scan(~r/\S+|\s+/, content)
     |> List.flatten()
     |> Enum.map(fn token ->
-      if String.trim(token) == "" do
+      if Press.Layout.Whitespace.blank?(token) do
         space_width = Metrics.text_width(font, " ", font_size, tracking)
 
         %{

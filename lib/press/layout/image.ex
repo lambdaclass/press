@@ -39,7 +39,7 @@ defmodule Press.Layout.Image do
         spec_w = resolve_img_dim(Map.get(attrs, "width"), computed.width, containing_width)
         spec_h = resolve_img_dim(Map.get(attrs, "height"), computed.height, containing_width)
 
-        {content_w, content_h} =
+        {natural_w, natural_h} =
           case {spec_w, spec_h} do
             {w, h} when is_number(w) and is_number(h) ->
               {w, h}
@@ -53,6 +53,11 @@ defmodule Press.Layout.Image do
             _ ->
               {intrinsic_w, intrinsic_h}
           end
+
+        {content_w, content_h} =
+          {natural_w, natural_h}
+          |> clamp_to(resolve_img_dim(nil, Map.get(computed, :max_width), containing_width), 0)
+          |> clamp_to(resolve_img_dim(nil, Map.get(computed, :max_height), containing_width), 1)
 
         # An image is inline-level, so the containing block's `text-align`
         # places it just as it would a word.
@@ -131,6 +136,18 @@ defmodule Press.Layout.Image do
 
       true ->
         nil
+    end
+  end
+
+  # A replaced element keeps its aspect ratio under `max-width`/`max-height`:
+  # the constraint scales both axes, it does not squash one.
+  defp clamp_to({w, h}, limit, axis) do
+    value = if axis == 0, do: w, else: h
+
+    if is_number(limit) and limit > 0 and value > limit do
+      {w * limit / value, h * limit / value}
+    else
+      {w, h}
     end
   end
 

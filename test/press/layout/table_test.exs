@@ -183,4 +183,92 @@ defmodule Press.Layout.TableTest do
       end
     end
   end
+
+  describe "rowspan" do
+    defp span_cell(tag, content, attrs) do
+      cell = cell_node(tag, content)
+      %Node{cell | element: %Press.HTML.Element{cell.element | attrs: attrs}}
+    end
+
+    test "the cells under a spanning one step over the columns it still occupies" do
+      table =
+        table_node([
+          row_node([
+            span_cell("th", "Materia", %{"rowspan" => "2"}),
+            span_cell("th", "Periodos", %{"colspan" => "2"})
+          ]),
+          row_node([cell_node("th", "1B"), cell_node("th", "2B")]),
+          row_node([cell_node("td", "Historia"), cell_node("td", "7"), cell_node("td", "8")])
+        ])
+
+      {table_box, _next_y, _mb} = Table.layout_table(table, 300.0, 0.0, 0.0)
+      [r1, r2, r3] = table_box.children
+
+      [materia, periodos] = r1.children
+      [b1, b2] = r2.children
+      [historia, nota1, nota2] = r3.children
+
+      assert materia.x == historia.x
+      assert periodos.x == b1.x
+      assert b1.x == nota1.x
+      assert b2.x == nota2.x
+    end
+
+    test "a spanning cell covers the rows below it instead of inflating its own row" do
+      table =
+        table_node([
+          row_node([span_cell("td", "A", %{"rowspan" => "2"}), cell_node("td", "B")]),
+          row_node([cell_node("td", "C")]),
+          row_node([cell_node("td", "D"), cell_node("td", "E")])
+        ])
+
+      {table_box, _next_y, _mb} = Table.layout_table(table, 300.0, 0.0, 0.0)
+      [r1, r2, r3] = table_box.children
+      [spanning, _b] = r1.children
+
+      assert_in_delta spanning.height, r1.height + r2.height, 0.01
+      assert r1.height == r3.height
+      assert_in_delta r3.y, r1.y + r1.height + r2.height, 0.01
+    end
+
+    test "a spanning cell taller than its rows pushes the last row of the span down" do
+      tall = span_cell("td", "A", %{"rowspan" => "2"})
+      tall = put_in(tall.computed.height, 90.0)
+
+      table =
+        table_node([
+          row_node([tall, cell_node("td", "B")]),
+          row_node([cell_node("td", "C")])
+        ])
+
+      {table_box, _next_y, _mb} = Table.layout_table(table, 300.0, 0.0, 0.0)
+      [r1, r2] = table_box.children
+
+      assert r1.height + r2.height >= 90.0
+      assert r2.height > r1.height
+    end
+  end
+
+  describe "min-content width" do
+    test "a nowrap cell is never squeezed below its whole run" do
+      nowrap = &put_in(&1.computed[:white_space], :nowrap)
+      wide = cell_node("td", "Construcción de la Ciudadanía")
+      wide = %Node{nowrap.(wide) | children: Enum.map(wide.children, nowrap)}
+
+      table =
+        table_node([
+          row_node([
+            wide,
+            cell_node("td", "una observación bastante más larga que el resto de la fila")
+          ])
+        ])
+
+      {table_box, _next_y, _mb} = Table.layout_table(table, 400.0, 0.0, 0.0)
+      [row] = table_box.children
+      [subject, _obs] = row.children
+
+      run = Press.Font.Metrics.text_width(:helvetica, "Construcción de la Ciudadanía", 12.0)
+      assert subject.width >= run
+    end
+  end
 end

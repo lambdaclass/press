@@ -43,6 +43,7 @@ defmodule Press.Layout.Box do
     :image,
     letter_spacing: 0.0,
     header_row: false,
+    footer_row: false,
     margin: %{top: 0.0, right: 0.0, bottom: 0.0, left: 0.0},
     padding: %{top: 0.0, right: 0.0, bottom: 0.0, left: 0.0},
     border_width: %{top: 0.0, right: 0.0, bottom: 0.0, left: 0.0},

@@ -177,7 +177,7 @@ defmodule Press.Layout.Block do
             Press.Layout.Visibility.hidden?(child_node)
 
           %Text{content: c} ->
-            String.trim(c) == ""
+            Press.Layout.Whitespace.blank?(c)
 
           _ ->
             false

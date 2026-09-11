@@ -32,11 +32,14 @@ defmodule Press.Layout.Fragment do
 
   defp do_split(%Box{} = box, limit_y) do
     header = Enum.filter(box.children, & &1.header_row)
-    body = Enum.reject(box.children, & &1.header_row)
+    footer = Enum.filter(box.children, & &1.footer_row)
+    body = Enum.reject(box.children, &(&1.header_row or &1.footer_row))
 
-    # The head can hold children whose bottom edge stays above the limit. A
-    # header is only worth carrying if at least one body row follows it.
-    {fitting, remaining} = Enum.split_while(body, &fits?(&1, limit_y))
+    # A repeated `<tfoot>` has to be on the page before the break too, so the
+    # body only gets what is left above it.
+    body_limit = limit_y - outer_heights(footer)
+
+    {fitting, remaining} = Enum.split_while(body, &fits?(&1, body_limit))
 
     # The first child that does not fit may still have a break inside it — a
     # paragraph can give up its first lines even when the whole of it cannot
@@ -45,7 +48,7 @@ defmodule Press.Layout.Fragment do
     {fitting, remaining} =
       case remaining do
         [first | rest] ->
-          case split(first, limit_y) do
+          case split(first, body_limit) do
             {:split, head, tail} -> {fitting ++ [head], [tail | rest]}
             :indivisible -> {fitting, remaining}
           end
@@ -54,15 +57,19 @@ defmodule Press.Layout.Fragment do
           {fitting, remaining}
       end
 
-    cond do
-      remaining == [] ->
-        :indivisible
+    if remaining == [] or fitting == [] do
+      :indivisible
+    else
+      {:split, head_box(box, header, fitting, footer), tail_box(box, header, remaining, footer)}
+    end
+  end
 
-      fitting == [] ->
-        :indivisible
+  defp outer_heights(boxes), do: boxes |> Enum.map(&Box.outer_height/1) |> Enum.sum()
 
-      true ->
-        {:split, head_box(box, header, fitting), tail_box(box, header, remaining)}
+  defp move_to(boxes, top) do
+    case boxes do
+      [] -> []
+      rows -> Enum.map(rows, &shift_y(&1, top - Enum.min(Enum.map(rows, fn r -> r.y end))))
     end
   end
 
@@ -70,10 +77,11 @@ defmodule Press.Layout.Fragment do
     child.y + Box.outer_height(child) <= limit_y
   end
 
-  defp head_box(box, header, fitting) do
-    children = header ++ fitting
+  defp head_box(box, header, fitting, footer) do
+    body_bottom = fitting |> Enum.map(&(&1.y + Box.outer_height(&1))) |> Enum.max()
+    children = header ++ fitting ++ move_to(footer, body_bottom)
     bottom = children |> Enum.map(&(&1.y + Box.outer_height(&1))) |> Enum.max()
-    content_top = box.y + box.margin.top + box.border_width.top + box.padding.top
+    content_top = box.y + box.border_width.top + box.padding.top
 
     %Box{
       box
@@ -85,35 +93,24 @@ defmodule Press.Layout.Fragment do
     }
   end
 
-  defp tail_box(box, header, remaining) do
-    header_height = header |> Enum.map(&Box.outer_height/1) |> Enum.sum()
-    first_y = remaining |> Enum.map(& &1.y) |> Enum.min()
-
-    # The tail starts at the box's own origin: the paginator shifts the whole
-    # fragment to the top of the next page, so children only need to be packed
-    # back against it, with room reserved for the repeated header.
-    shift = box.y - first_y + header_height
-
-    moved_body = Enum.map(remaining, &shift_y(&1, shift))
-
-    moved_header =
-      reflow_header(header, box.y - (header |> Enum.map(& &1.y) |> Enum.min(fn -> box.y end)))
-
-    children = moved_header ++ moved_body
+  # The tail keeps the y its children already had, so the siblings that follow
+  # it on the page stay the same distance away as the layout gave them. Only the
+  # repeated header moves, into the space just above the first surviving child.
+  defp tail_box(box, header, remaining, footer) do
+    top = Enum.min(Enum.map(remaining, & &1.y)) - outer_heights(header)
+    children = move_to(header, top) ++ remaining ++ footer
     bottom = children |> Enum.map(&(&1.y + Box.outer_height(&1))) |> Enum.max()
 
     %Box{
       box
-      | children: children,
-        height: max(0.0, bottom - box.y),
+      | y: top,
+        children: children,
+        height: max(0.0, bottom - top),
         padding: %{box.padding | top: 0.0},
         border_width: %{box.border_width | top: 0.0},
         margin: %{box.margin | top: 0.0}
     }
   end
-
-  defp reflow_header([], _shift), do: []
-  defp reflow_header(header, shift), do: Enum.map(header, &shift_y(&1, shift))
 
   @doc """
   Moves a box and its whole subtree down by `dy`.

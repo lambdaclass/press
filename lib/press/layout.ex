@@ -103,9 +103,9 @@ defmodule Press.Layout do
       y: origin_y,
       width: content_width,
       height: total_height,
-      # The wrapper's bottom edge is not a box the paginator walks, so it
-      # travels here: every page has to stop that much short of its margin.
-      padding: %{top: 0.0, right: 0.0, bottom: inset.bottom, left: 0.0},
+      # The wrapper's edges are not boxes the paginator walks, so they travel
+      # here: every page starts and stops that much inside its margin.
+      padding: %{top: inset.top, right: 0.0, bottom: inset.bottom, left: 0.0},
       children: Enum.reverse(top_boxes)
     }
   end
@@ -179,7 +179,7 @@ defmodule Press.Layout do
 
     if has_blocks do
       Enum.reject(nodes, fn
-        %Text{content: c} -> String.trim(c) == ""
+        %Text{content: c} -> Press.Layout.Whitespace.blank?(c)
         _ -> false
       end)
     else

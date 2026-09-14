@@ -137,6 +137,10 @@ defmodule Press.Layout.Table do
               {:cont, {idx + span, nil}}
             end
           end)
+          |> case do
+            {_idx, fallback} -> fallback
+            width -> width
+          end
         end)
       end
 
@@ -160,6 +164,10 @@ defmodule Press.Layout.Table do
                   {:cont, {idx + span, 10.0}}
                 end
               end)
+              |> case do
+                {_idx, fallback} -> fallback
+                width -> width
+              end
             end)
             |> Enum.max(fn -> 10.0 end)
 

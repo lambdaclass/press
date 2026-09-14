@@ -167,4 +167,20 @@ defmodule Press.Layout.TableTest do
       assert length(r2.children) == 2
     end
   end
+
+  describe "rows with fewer cells than the table has columns" do
+    test "a short row does not leak the reduce accumulator as a column width" do
+      rows = [
+        row_node([cell_node("th", "A"), cell_node("th", "B"), cell_node("th", "C")]),
+        row_node([cell_node("td", "solo una")])
+      ]
+
+      {table_box, _next_y, _mb} = Table.layout_table(table_node(rows), 300.0, 0.0, 0.0)
+
+      for row <- table_box.children, cell <- row.children do
+        assert is_number(cell.width)
+        assert cell.width > 0.0
+      end
+    end
+  end
 end

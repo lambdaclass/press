@@ -137,5 +137,9 @@ defmodule Press.PDF.ContentStream do
   end
 
   defp winansi_byte(codepoint) when codepoint in 0x00..0xFF, do: codepoint
-  defp winansi_byte(codepoint), do: Map.get(@unicode_to_winansi, codepoint, ?\s)
+
+  # A simple font is one byte per glyph, so anything outside WinAnsi cannot be
+  # written at all. It becomes `?` rather than a space: a document that silently
+  # loses a character reads as correct, and nobody goes looking.
+  defp winansi_byte(codepoint), do: Map.get(@unicode_to_winansi, codepoint, ??)
 end

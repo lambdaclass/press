@@ -37,11 +37,18 @@ defmodule Press.PDF.ContentStreamTest do
     assert result =~ <<"(10 ", 0x80, ") Tj">>
   end
 
-  test "replaces characters outside the WinAnsi range with a space" do
+  test "a character outside the WinAnsi range is written as a visible ?" do
     ops = [{:text, 0.0, 0.0, :helvetica, 12, {0, 0, 0}, "a\u{4E16}b"}]
     result = ContentStream.render(ops, %{helvetica: "/F1"})
 
-    assert result =~ "(a b) Tj"
+    assert result =~ "(a?b) Tj"
+  end
+
+  test "the Latin-1 range a Spanish document needs is written verbatim" do
+    ops = [{:text, 0.0, 0.0, :helvetica, 12, {0, 0, 0}, "Ñandú ¡señor! 25°"}]
+    result = ContentStream.render(ops, %{helvetica: "/F1"})
+
+    refute result =~ "?"
   end
 
   test "renders a filled and stroked rect op" do

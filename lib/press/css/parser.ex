@@ -41,6 +41,16 @@ defmodule Press.CSS.Parser do
     "page-break-after" => [:auto, :always]
   }
 
+  defp normalize_keyword("font-weight", value) do
+    case Integer.parse(String.trim(value)) do
+      {n, ""} when n >= 600 -> "bold"
+      {_n, ""} -> "normal"
+      _ -> value
+    end
+  end
+
+  defp normalize_keyword(_property, value), do: value
+
   @side_length_properties %{
     "margin-top" => "margin-top",
     "margin-right" => "margin-right",
@@ -526,7 +536,8 @@ defmodule Press.CSS.Parser do
         with {:ok, v} <- Value.parse_length(value), do: {:ok, %{property => v}}
 
       valid_keywords = Map.get(@keyword_properties, property) ->
-        with {:ok, v} <- Value.parse_keyword(value, valid_keywords), do: {:ok, %{property => v}}
+        with {:ok, v} <- Value.parse_keyword(normalize_keyword(property, value), valid_keywords),
+             do: {:ok, %{property => v}}
 
       true ->
         :error

@@ -254,4 +254,20 @@ defmodule Press.CSS.ParserTest do
     assert rule.declarations["margin-top"] == {:length, 6.0, :px}
     assert rule.declarations["margin-bottom"] == {:length, 8.0, :px}
   end
+
+  describe "font-weight" do
+    test "a numeric weight of 600 or more is bold" do
+      assert %{"font-weight" => :bold} = Press.CSS.Parser.parse_declarations("font-weight: 600")
+      assert %{"font-weight" => :bold} = Press.CSS.Parser.parse_declarations("font-weight: 700")
+    end
+
+    test "a numeric weight under 600 is normal" do
+      assert %{"font-weight" => :normal} = Press.CSS.Parser.parse_declarations("font-weight: 500")
+      assert %{"font-weight" => :normal} = Press.CSS.Parser.parse_declarations("font-weight: 400")
+    end
+
+    test "the keywords still work" do
+      assert %{"font-weight" => :bold} = Press.CSS.Parser.parse_declarations("font-weight: bold")
+    end
+  end
 end

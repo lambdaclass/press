@@ -22,7 +22,9 @@ defmodule Press.Style.Cascade do
     vertical_align: :baseline,
     text_transform: :none,
     list_style_type: :disc,
-    list_style_position: :outside
+    list_style_position: :outside,
+    page_break_before: :auto,
+    page_break_after: :auto
   }
 
   @initial_font_size 12.0
@@ -37,6 +39,11 @@ defmodule Press.Style.Cascade do
     {:text_transform, "text-transform"},
     {:list_style_type, "list-style-type"},
     {:list_style_position, "list-style-position"}
+  ]
+
+  @keyword_non_inheritable [
+    {:page_break_before, "page-break-before"},
+    {:page_break_after, "page-break-after"}
   ]
 
   @doc """
@@ -154,6 +161,11 @@ defmodule Press.Style.Cascade do
         resolve_dimension(Map.get(specified, "height"), font_size, context.root_font_size)
       )
       |> Map.put(:background_color, Map.get(specified, "background-color"))
+      |> then(fn c ->
+        Enum.reduce(@keyword_non_inheritable, c, fn {key, prop}, acc ->
+          Map.put(acc, key, Map.get(specified, prop, :auto))
+        end)
+      end)
 
     inherited_keys = Enum.map(@keyword_inheritable, fn {key, _prop} -> key end)
     child_inherited = computed |> Map.take(inherited_keys) |> Map.put(:color, color)

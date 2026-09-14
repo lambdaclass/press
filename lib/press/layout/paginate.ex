@@ -83,7 +83,7 @@ defmodule Press.Layout.Paginate do
        ) do
     box_h = Box.outer_height(box)
 
-    is_break_before = get_page_break(box, "page-break-before") == :always
+    is_break_before = get_page_break(box, :page_break_before) == :always
 
     if is_break_before and current_page_boxes != [] do
       page =
@@ -115,7 +115,7 @@ defmodule Press.Layout.Paginate do
         new_current_boxes = current_page_boxes ++ [placed_box]
         new_current_y = current_y + box_h
 
-        is_break_after = get_page_break(box, "page-break-after") == :always
+        is_break_after = get_page_break(box, :page_break_after) == :always
 
         if is_break_after do
           page =

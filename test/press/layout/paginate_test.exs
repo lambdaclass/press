@@ -105,7 +105,7 @@ defmodule Press.Layout.PaginateTest do
 
     test "forces a new page on page-break-before: always" do
       b1 = block_box("p", 100.0)
-      b2 = block_box("p", 100.0, %{"page-break-before" => :always})
+      b2 = block_box("p", 100.0, %{page_break_before: :always})
       root = %Box{type: :root, children: [b1, b2]}
 
       pages = Paginate.paginate(root, page_config())

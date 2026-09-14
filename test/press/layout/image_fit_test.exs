@@ -25,6 +25,9 @@ defmodule Press.Layout.ImageFitTest do
   defp find(%Box{children: children}), do: Enum.find_value(children || [], &find/1)
   defp find(_), do: nil
 
+  defp painted(%Box{children: [%Box{type: :image} = inner]}), do: inner
+  defp painted(%Box{} = box), do: box
+
   describe "object-fit" do
     test "by default both declared dimensions are used as given" do
       box = image_box("width: 100px; height: 100px")
@@ -32,16 +35,23 @@ defmodule Press.Layout.ImageFitTest do
       assert_in_delta box.height, 75.0, 0.01
     end
 
-    test "contain scales the image inside the box, keeping its ratio" do
+    test "contain scales the image inside the box without shrinking the box" do
       box = image_box("width: 100px; height: 100px; object-fit: contain")
       assert_in_delta box.width, 75.0, 0.01
-      assert_in_delta box.height, 37.5, 0.01
+      assert_in_delta box.height, 75.0, 0.01
+
+      image = painted(box)
+      assert_in_delta image.width, 75.0, 0.01
+      assert_in_delta image.height, 37.5, 0.01
+      assert_in_delta image.y - box.y, 18.75, 0.01
+      assert_in_delta image.x - box.x, 0.0, 0.01
     end
 
     test "scale-down never enlarges" do
       box = image_box("width: 400px; height: 400px; object-fit: scale-down")
-      assert_in_delta box.width, 30.0, 0.01
-      assert_in_delta box.height, 15.0, 0.01
+      image = painted(box)
+      assert_in_delta image.width, 30.0, 0.01
+      assert_in_delta image.height, 15.0, 0.01
     end
   end
 end

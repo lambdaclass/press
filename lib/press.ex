@@ -29,6 +29,9 @@ defmodule Press do
     fraction of the font size (e.g. `0.02`). The base-14 fonts stop at
     Helvetica-Bold, so this is the only way to reach the weight of a heavier
     face. Defaults to `0.0`, which leaves the bold face untouched.
+  - `:embed_fonts` — a map of font key to a path, the font's bytes, or an
+    already-loaded `Press.Font.Program`. Pass the loaded program when rendering
+    more than one document: parsing a face dominates the cost of a small page.
   - `:print_background` — when false, background colours are left unpainted, the
     way a browser's print pipeline drops them unless asked. Defaults to true.
   - `:page` — overrides the `@page` rule. `size:` takes `{width_pt, height_pt}` or
@@ -112,14 +115,23 @@ defmodule Press do
   # base font still draws the page, so a missing file degrades the letterforms
   # instead of losing the document.
   defp load_fonts(sources) do
-    Map.new(sources, fn {font, source} ->
-      case Press.Font.Program.load(source) do
-        {:ok, program} -> {font, program}
-        {:error, _reason} -> {font, nil}
-      end
+    sources
+    |> Map.new(fn
+      # Reading and parsing a face costs more than laying out a small document,
+      # so a caller rendering in a loop is expected to hand over the result of
+      # `Press.Font.Program.load/1` instead of the path, once.
+      {font, %Press.Font.Program{} = program} -> {font, program}
+      {font, source} -> {font, load_font(source)}
     end)
     |> Enum.reject(fn {_font, program} -> is_nil(program) end)
     |> Map.new()
+  end
+
+  defp load_font(source) do
+    case Press.Font.Program.load(source) do
+      {:ok, program} -> program
+      {:error, _reason} -> nil
+    end
   end
 
   @named_sizes %{a4: {595.28, 841.89}, letter: {612.0, 792.0}, legal: {612.0, 1008.0}}

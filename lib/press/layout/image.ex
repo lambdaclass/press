@@ -42,7 +42,7 @@ defmodule Press.Layout.Image do
         {natural_w, natural_h} =
           case {spec_w, spec_h} do
             {w, h} when is_number(w) and is_number(h) ->
-              fit(Map.get(computed, :object_fit, :fill), {w, h}, {intrinsic_w, intrinsic_h})
+              {w, h}
 
             {w, nil} when is_number(w) ->
               {w, if(intrinsic_w > 0, do: w / intrinsic_w * intrinsic_h, else: intrinsic_h)}
@@ -75,6 +75,16 @@ defmodule Press.Layout.Image do
         total_outer_height =
           content_h + padding.top + padding.bottom + border_width.top + border_width.bottom
 
+        # `object-fit` scales what is painted; the element keeps the size it was
+        # given. A `contain` that leaves room does not shrink the box, it leaves
+        # the image floating in the middle of it.
+        painted =
+          fit(Map.get(computed, :object_fit, :fill), {content_w, content_h},
+            {intrinsic_w, intrinsic_h})
+
+        content_origin_x = box_x + border_width.left + padding.left
+        content_origin_y = box_y + border_width.top + padding.top
+
         box = %Box{
           type: :image,
           tag: "img",
@@ -82,7 +92,8 @@ defmodule Press.Layout.Image do
           y: box_y,
           width: content_w,
           height: content_h,
-          image: image_with_id,
+          image: if(painted == {content_w, content_h}, do: image_with_id, else: nil),
+          children: letterbox(painted, {content_w, content_h}, {content_origin_x, content_origin_y}, image_with_id),
           margin: margin,
           padding: padding,
           border_width: border_width,
@@ -137,6 +148,22 @@ defmodule Press.Layout.Image do
       true ->
         nil
     end
+  end
+
+  defp letterbox(same, same, _origin, _image), do: []
+
+  defp letterbox({w, h}, {box_w, box_h}, {x, y}, image) do
+    [
+      %Box{
+        type: :image,
+        tag: "img",
+        x: x + (box_w - w) / 2.0,
+        y: y + (box_h - h) / 2.0,
+        width: w,
+        height: h,
+        image: image
+      }
+    ]
   end
 
   # With both dimensions given, `object-fit` decides whether the image is

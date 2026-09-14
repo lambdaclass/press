@@ -3,7 +3,7 @@ defmodule Press.HTML.TreeBuilder do
 
   alias Press.HTML.{Element, Text}
 
-  @void_elements ~w(br img link meta)
+  @void_elements ~w(area base br col embed hr img input link meta param source track wbr)
   @p_closing_tags ~w(p div h1 h2 h3 h4 h5 h6 ul ol table header footer main)
   @sibling_closing_tags ~w(p li tr)
   @cell_tags ~w(td th)

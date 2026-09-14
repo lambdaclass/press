@@ -578,6 +578,7 @@ defmodule Press.Layout.Table do
       width: row_width,
       height: row_height,
       background_color: row_node.computed.background_color,
+      computed: row_node.computed,
       children: placed
     }
   end

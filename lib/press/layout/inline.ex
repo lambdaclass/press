@@ -54,6 +54,7 @@ defmodule Press.Layout.Inline do
     line_height = computed.line_height
     color = computed.color
     tracking = Map.get(computed, :letter_spacing, 0.0)
+    breakable? = Map.get(computed, :overflow_wrap) in [:"break-word", :anywhere]
 
     Regex.scan(~r/\S+|\s+/, content)
     |> List.flatten()
@@ -82,6 +83,7 @@ defmodule Press.Layout.Inline do
           line_height: line_height,
           color: color,
           letter_spacing: tracking,
+          breakable?: breakable?,
           width: word_width
         }
       end
@@ -114,17 +116,51 @@ defmodule Press.Layout.Inline do
   end
 
   defp do_break_lines([token | rest], avail_w, current_line, line_w, lines_acc) do
-    if current_line == [] do
-      do_break_lines(rest, avail_w, [token], token.width, lines_acc)
-    else
-      if line_w + token.width <= avail_w do
+    cond do
+      current_line == [] and overflows_alone?(token, avail_w) ->
+        {head, tail} = split_word(token, avail_w)
+        do_break_lines([tail | rest], avail_w, [], 0.0, [[head] | lines_acc])
+
+      current_line == [] ->
+        do_break_lines(rest, avail_w, [token], token.width, lines_acc)
+
+      line_w + token.width <= avail_w ->
         do_break_lines(rest, avail_w, [token | current_line], line_w + token.width, lines_acc)
-      else
+
+      true ->
         trimmed_line = trim_line(Enum.reverse(current_line))
         next_tokens = drop_leading_spaces([token | rest])
         do_break_lines(next_tokens, avail_w, [], 0.0, [trimmed_line | lines_acc])
-      end
     end
+  end
+
+  # `overflow-wrap: break-word` only applies to a word that has a line to itself
+  # and still does not fit: anything that can be moved to the next line intact
+  # is, first.
+  defp overflows_alone?(%{type: :word, breakable?: true} = token, avail_w) do
+    avail_w > 0.0 and token.width > avail_w and String.length(token.text) > 1
+  end
+
+  defp overflows_alone?(_token, _avail_w), do: false
+
+  defp split_word(token, avail_w) do
+    take = fitting_length(String.graphemes(token.text), token, avail_w, 0, 0.0)
+    {head, tail} = String.split_at(token.text, max(take, 1))
+    {retext(token, head), retext(token, tail)}
+  end
+
+  defp fitting_length([], _token, _avail_w, taken, _width), do: taken
+
+  defp fitting_length([grapheme | rest], token, avail_w, taken, width) do
+    next = width + Metrics.text_width(token.font, grapheme, token.font_size, token.letter_spacing)
+
+    if next > avail_w,
+      do: taken,
+      else: fitting_length(rest, token, avail_w, taken + 1, next)
+  end
+
+  defp retext(token, text) do
+    %{token | text: text, width: Metrics.text_width(token.font, text, token.font_size, token.letter_spacing)}
   end
 
   defp drop_leading_spaces([%{type: :space} | rest]), do: drop_leading_spaces(rest)

@@ -18,13 +18,22 @@ defmodule Press.Layout.Fragment do
   interrupted by the page edge rather than two stacked boxes. A table repeats
   its `<thead>` rows at the top of the tail.
   """
-  def split(%Box{} = box, limit_y) do
-    if splittable?(box) do
+  def split(%Box{} = box, limit_y, honour_avoid? \\ true) do
+    if splittable?(box) and not (honour_avoid? and keep_whole?(box)) do
       do_split(box, limit_y)
     else
       :indivisible
     end
   end
+
+  @doc """
+  Whether the box asked not to be broken across pages.
+  """
+  def keep_whole?(%Box{computed: computed}) when is_map(computed) do
+    Map.get(computed, :page_break_inside) == :avoid
+  end
+
+  def keep_whole?(_box), do: false
 
   defp splittable?(%Box{type: type, children: children}) do
     type in @splittable and children != []

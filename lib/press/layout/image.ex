@@ -42,7 +42,7 @@ defmodule Press.Layout.Image do
         {natural_w, natural_h} =
           case {spec_w, spec_h} do
             {w, h} when is_number(w) and is_number(h) ->
-              {w, h}
+              fit(Map.get(computed, :object_fit, :fill), {w, h}, {intrinsic_w, intrinsic_h})
 
             {w, nil} when is_number(w) ->
               {w, if(intrinsic_w > 0, do: w / intrinsic_w * intrinsic_h, else: intrinsic_h)}
@@ -138,6 +138,18 @@ defmodule Press.Layout.Image do
         nil
     end
   end
+
+  # With both dimensions given, `object-fit` decides whether the image is
+  # stretched to them or scaled inside them. `cover` and `none` are not
+  # distinguished from `fill` here: neither can be drawn without clipping, which
+  # Press has no way to express.
+  defp fit(mode, {w, h}, {iw, ih}) when mode in [:contain, :"scale-down"] and iw > 0 and ih > 0 do
+    scale = min(w / iw, h / ih)
+    scale = if mode == :"scale-down", do: min(scale, 1.0), else: scale
+    {iw * scale, ih * scale}
+  end
+
+  defp fit(_mode, box, _intrinsic), do: box
 
   # A replaced element keeps its aspect ratio under `max-width`/`max-height`:
   # the constraint scales both axes, it does not squash one.

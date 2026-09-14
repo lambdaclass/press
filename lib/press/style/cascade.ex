@@ -25,8 +25,11 @@ defmodule Press.Style.Cascade do
     list_style_position: :outside,
     letter_spacing: 0.0,
     white_space: :normal,
+    overflow_wrap: :normal,
     page_break_before: :auto,
     page_break_after: :auto,
+    page_break_inside: :auto,
+    object_fit: :fill,
     display: nil,
     box_sizing: :"content-box",
     table_layout: :auto,
@@ -48,12 +51,15 @@ defmodule Press.Style.Cascade do
     {:text_transform, "text-transform"},
     {:list_style_type, "list-style-type"},
     {:list_style_position, "list-style-position"},
-    {:white_space, "white-space"}
+    {:white_space, "white-space"},
+    {:overflow_wrap, "overflow-wrap"}
   ]
 
   @keyword_non_inheritable [
     {:page_break_before, "page-break-before"},
     {:page_break_after, "page-break-after"},
+    {:page_break_inside, "page-break-inside"},
+    {:object_fit, "object-fit"},
     {:display, "display"},
     {:box_sizing, "box-sizing"},
     {:table_layout, "table-layout"},

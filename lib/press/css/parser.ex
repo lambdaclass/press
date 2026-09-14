@@ -56,7 +56,10 @@ defmodule Press.CSS.Parser do
     "box-sizing" => [:"content-box", :"border-box"],
     "border-collapse" => [:collapse, :separate],
     "page-break-before" => [:auto, :always],
-    "page-break-after" => [:auto, :always]
+    "page-break-after" => [:auto, :always],
+    "page-break-inside" => [:auto, :avoid],
+    "overflow-wrap" => [:normal, :"break-word", :anywhere],
+    "object-fit" => [:fill, :contain, :cover, :none, :"scale-down"]
   }
 
   defp parse_track_list(value) do
@@ -498,6 +501,10 @@ defmodule Press.CSS.Parser do
   end
 
   defp do_parse_declaration("border", value), do: Shorthand.expand_border(value)
+
+  # Legacy spellings of properties CSS has since renamed.
+  defp do_parse_declaration("word-wrap", value), do: do_parse_declaration("overflow-wrap", value)
+  defp do_parse_declaration("break-inside", value), do: do_parse_declaration("page-break-inside", value)
 
   # Only the colour is read. The other layers a `background` can carry —
   # image, position, repeat — are not painted, so a value that has one is

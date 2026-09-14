@@ -85,12 +85,21 @@ defmodule Press.Layout.Paginate do
       margin_box_top(box) + shift + Box.outer_height(box) <= ctx.page_bottom ->
         place.()
 
+      # `page-break-inside: avoid` only asks to be kept whole. A box that no
+      # page can hold has to break anyway, so the request is honoured by moving
+      # it to a fresh page, not by refusing to place it.
+      Fragment.keep_whole?(box) and not page_empty? ->
+        next_page.([box | rest], emit.(current_page_boxes))
+
       true ->
         # Too tall for what is left. Break inside it if it has a break
         # opportunity above the page edge, otherwise push it whole to the next
         # page — and if the page is already empty, place it anyway rather than
         # loop forever on a box no page can hold.
-        case Fragment.split(box, ctx.page_bottom - shift) do
+        # A box asking to be kept whole has already been moved to a page of its
+        # own by the clause above. Reaching here means no page can hold it, so
+        # the request is dropped rather than letting it run off the sheet.
+        case Fragment.split(box, ctx.page_bottom - shift, not page_empty?) do
           {:split, head, tail} ->
             next_page.([tail | rest], emit.(current_page_boxes ++ [shift_box_y(head, shift)]))
 

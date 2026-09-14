@@ -499,6 +499,16 @@ defmodule Press.CSS.Parser do
 
   defp do_parse_declaration("border", value), do: Shorthand.expand_border(value)
 
+  # Only the colour is read. The other layers a `background` can carry —
+  # image, position, repeat — are not painted, so a value that has one is
+  # dropped rather than half-applied.
+  defp do_parse_declaration("background", value) do
+    case Value.parse_color(String.trim(value)) do
+      {:ok, color} -> {:ok, %{"background-color" => color}}
+      _ -> :error
+    end
+  end
+
   defp do_parse_declaration("border-top", value), do: expand_directional_border("top", value)
   defp do_parse_declaration("border-right", value), do: expand_directional_border("right", value)
   defp do_parse_declaration("border-bottom", value), do: expand_directional_border("bottom", value)

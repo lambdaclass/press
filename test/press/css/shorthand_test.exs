@@ -124,4 +124,19 @@ defmodule Press.CSS.ShorthandTest do
       assert Shorthand.expand_border("1px solid dashed") == :error
     end
   end
+
+  describe "background" do
+    test "the shorthand sets the background colour" do
+      decls = Press.CSS.Parser.parse_declarations("background: #f4f4f5")
+      assert {r, g, b} = decls["background-color"]
+      assert_in_delta r, 244 / 255, 0.001
+      assert_in_delta g, 244 / 255, 0.001
+      assert_in_delta b, 245 / 255, 0.001
+    end
+
+    test "a background carrying something Press cannot paint is dropped whole" do
+      decls = Press.CSS.Parser.parse_declarations("background: url(x.png) no-repeat")
+      refute Map.has_key?(decls, "background-color")
+    end
+  end
 end

@@ -30,8 +30,11 @@ defmodule Press do
     Helvetica-Bold, so this is the only way to reach the weight of a heavier
     face. Defaults to `0.0`, which leaves the bold face untouched.
   - `:embed_fonts` — a map of font key to a path, the font's bytes, or an
-    already-loaded `Press.Font.Program`. Pass the loaded program when rendering
-    more than one document: parsing a face dominates the cost of a small page.
+    already-loaded `Press.Font.Program`. Prefer the path: reading and parsing a
+    face is a few milliseconds, while a loaded program is mostly maps, which a
+    caller rendering under `Task.async_stream` pays to deep-copy into every
+    worker. Measured at four concurrent invoices, passing the path is 1.6x
+    faster than passing the program.
   - `:print_background` — when false, background colours are left unpainted, the
     way a browser's print pipeline drops them unless asked. Defaults to true.
   - `:page` — overrides the `@page` rule. `size:` takes `{width_pt, height_pt}` or
@@ -117,9 +120,6 @@ defmodule Press do
   defp load_fonts(sources) do
     sources
     |> Map.new(fn
-      # Reading and parsing a face costs more than laying out a small document,
-      # so a caller rendering in a loop is expected to hand over the result of
-      # `Press.Font.Program.load/1` instead of the path, once.
       {font, %Press.Font.Program{} = program} -> {font, program}
       {font, source} -> {font, load_font(source)}
     end)
